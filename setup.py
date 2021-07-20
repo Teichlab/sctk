@@ -11,7 +11,7 @@ setup(
     description='single cell analysis tool kit based on scanpy',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/nh3/sctk',
+    url='https://github.com/Teichlab/sctk',
     packages=find_packages(),
     entry_points=dict(),
     install_requires=[
@@ -19,10 +19,6 @@ setup(
         'scanpy',
         'leidenalg',
         'adjustText',
-#        'harmonypy',
-#        'bbknn',
         'numpy_groupies',
-#        'scvelo',
-#        'phate',
     ],
 )
