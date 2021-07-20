@@ -1,10 +1,86 @@
-from collections import defaultdict
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 from sklearn.preprocessing import normalize
+from collections import Counter
+from collections import defaultdict
+import matplotlib.pyplot as plt
 import anndata
 import scanpy as sc
+from ._diffexp import extract_de_table
+
+
+class volcano_plot():
+    '''
+    creat volcano plot from anndata
+    code from Jonguen Park
+    '''
+    
+    def __init__(self,adata,anno_key,comp1,comp2,P=0.1,min_fc=0.5,quick=True, method='ttest'):
+        '''
+        param P :pseudocount for fc calculation
+        '''
+        if method == 'ttest':
+            from scipy.stats import ttest_ind as test_two_samples
+        elif method == 'wilcoxon':
+            from scipy.stats import wilcoxon as test_two_samples
+        self.genelist = adata.raw.var_names
+        index1 = adata.obs[anno_key]==comp1
+        index2 = adata.obs[anno_key]==comp2
+
+        exp1 = adata.raw[index1].X.todense()
+        exp2 = adata.raw[index2].X.todense()
+        
+        self.pval = []
+        self.fc = []
+        for i in range(adata.raw.shape[1]):
+            self.fc.append(np.log2((np.mean(exp1[:,i].A1)+P)/(np.mean(exp2[:,i].A1)+P)))
+            if quick:
+                if np.abs(self.fc[-1])<min_fc:
+                    self.pval.append(1)
+                else:
+                    self.pval.append(test_two_samples(exp1[:,i].A1,exp2[:,i].A1)[1])
+            else:
+                self.pval.append(test_two_samples(exp1[:,i].A1,exp2[:,i].A1)[1])
+
+        self.pval = np.array(self.pval)
+        from statsmodels.stats.multitest import fdrcorrection
+        k_nan = np.isnan(self.pval)
+        p = self.pval[~k_nan]
+        padj = fdrcorrection(p)[1]
+        self.padj = self.pval.copy()
+        self.padj[~k_nan] = padj
+        self.fc = np.array(self.fc)
+            
+    def draw(self, pvalue_cut=100, fc_cut=1, adjust_lim = 5, show=True, fontsize=8, figsize=(4, 4), sided='both'):
+        '''
+        draw volcano plot
+        param pvalue_cut :-log10Pvalue for cutoff
+        '''
+        from adjustText import adjust_text
+        plt.figure(figsize=figsize)
+
+        xpos = np.array(self.fc)
+        ypos = -np.log10(np.array(self.padj))
+        ypos[ypos==np.inf] = np.max(ypos[ypos!=np.inf])
+
+        if sided == 'upper':
+            sig = (xpos > fc_cut) & (ypos > pvalue_cut)
+        elif sided == 'lower':
+            sig = (xpos < fc_cut) & (ypos > pvalue_cut)
+        else:
+            sig = (np.abs(xpos) > fc_cut) & (ypos > pvalue_cut)
+
+        plt.scatter(xpos,ypos,s=1, color='k', rasterized=True)
+        plt.scatter(xpos[sig],ypos[sig],s=3, color='red', rasterized=True)
+
+        texts = []
+        for i, gene in enumerate(self.genelist[sig]):
+            texts.append(plt.text(xpos[sig][i],ypos[sig][i],gene,fontsize=fontsize))
+
+        adjust_text(texts,only_move={'texts':'xy'},lim=adjust_lim)
+        if show:
+            plt.show()
 
 
 def calc_marker_stats(ad, groupby, genes=None, use_rep='raw', inplace=False, partial=False):
@@ -64,8 +140,7 @@ def calc_marker_stats(ad, groupby, genes=None, use_rep='raw', inplace=False, par
             'top_frac_group': top_frac_grps, 'top_frac': top_fracs, 'frac_diff': frac_diffs, 'max_frac_diff': max_frac_diffs,
             'top_mean_group': top_mean_grps, 'top_mean': top_means, 'mean_diff': mean_diffs, 'max_mean_diff': max_mean_diffs
         }, index=var_names)
-        stats_df['top_frac_group'] = stats_df['top_frac_group'].astype('category')
-        stats_df['top_frac_group'].cat.reorder_categories(list(ad.obs[groupby].cat.categories), inplace=True)
+        stats_df['top_frac_group'] = stats_df['top_frac_group'].astype(pd.CategoricalDtype(categories=list(ad.obs[groupby].cat.categories), ordered=True))
 
     if inplace:
         if use_rep == 'raw':
@@ -82,12 +157,12 @@ def calc_marker_stats(ad, groupby, genes=None, use_rep='raw', inplace=False, par
         return frac_df, mean_df, stats_df
 
 
-def filter_marker_stats(data, use_rep='raw', min_frac_diff=0.1, min_mean_diff=0.1, max_next_frac=0.9, max_next_mean=0.95, strict=False, how='or'):
+def filter_marker_stats(ad, use_rep='raw', min_frac_diff=0.1, min_mean_diff=0.1, max_next_frac=0.9, max_next_mean=0.95, strict=False, how='or'):
     columns = ['top_frac_group', 'top_frac', 'frac_diff', 'max_frac_diff', 'top_mean_group', 'top_mean', 'mean_diff', 'max_mean_diff']
-    if isinstance(data, anndata.AnnData):
-        stats_df = data.raw.var[columns] if use_rep == 'raw' else data.var[columns]
-    elif isinstance(data, pd.DataFrame):
-        stats_df = data[columns]
+    if isinstance(ad, anndata.AnnData):
+        stats_df = ad.raw.var[columns] if use_rep == 'raw' else ad.var[columns]
+    elif isinstance(ad, pd.DataFrame):
+        stats_df = ad[columns]
     else:
         raise ValueError('Invalid input, must be an AnnData or DataFrame')
     frac_diff = stats_df.frac_diff if strict else stats_df.max_frac_diff
@@ -108,28 +183,20 @@ def filter_marker_stats(data, use_rep='raw', min_frac_diff=0.1, min_mean_diff=0.
     return filtered
 
 
-def plot_markers(
-    adata: anndata.AnnData,
-    groupby: str,
-    mks: pd.DataFrame,
-    n_genes: int = 5,
-    kind: str = 'dotplot',
-    remove_genes: list = [],
-    **kwargs
-):
-    df = mks.reset_index()[['index', 'top_frac_group']].rename(columns={'index': 'gene', 'top_frac_group': 'cluster'})
-    var_tb = adata.raw.var if kwargs.get('use_raw', None) == True or adata.raw else adata.var
-    remove_gene_set = set()
-    for g_cat in remove_genes:
-        if g_cat in var_tb.columns:
-            remove_gene_set |= set(var_tb.index[var_tb[g_cat].values])
-    df = df[~df.gene.isin(list(remove_gene_set))].copy()
-    df1 = df.groupby('cluster').head(n_genes)
-    mks_dict = defaultdict(list)
-    for c, g in zip(df1.cluster, df1.gene):
-        mks_dict[c].append(g)
-    func = getattr(sc.pl, kind)
-    if sc.__version__.startswith('1.4'):
-        return func(adata, df1.gene.to_list(), groupby=groupby, **kwargs)
-    else:
-        return func(adata, mks_dict, groupby=groupby, **kwargs)
+def top_markers(df, top_n=5, groupby='top_frac_group'):
+    return df.groupby(groupby).head(top_n).index.to_list()
+
+
+def test_markers(ad, mks, groupby, n_genes=100, use_raw=True, **kwargs):
+    genes = top_markers(mks, top_n=n_genes)
+    aux_ad = anndata.AnnData(
+        X=ad.raw.X if use_raw else ad.X,
+        obs=ad.obs.copy(),
+        var=ad.raw.var.copy() if use_raw else ad.var.copy()
+    )
+    aux_ad = aux_ad[:, genes].copy()
+    sc.tl.rank_genes_groups(aux_ad, groupby=groupby, n_genes=n_genes, use_raw=False, **kwargs)
+    de_tbl = extract_de_table(aux_ad.uns['rank_genes_groups'])
+    return mks.reset_index().rename(columns={'index': 'genes', 'top_frac_group': 'cluster'}).merge(
+        de_tbl[['cluster', 'genes', 'logfoldchanges', 'pvals', 'pvals_adj']], how='left'
+    )
