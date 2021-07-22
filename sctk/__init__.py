@@ -19,9 +19,7 @@ from ._dpt import dpt
 from ._paga import paga, plot_paga
 from ._doublets import run_scrublet
 from ._markers import (
-    find_markers,
     volcano_plot,
-    mks2df,
     calc_marker_stats,
     filter_marker_stats,
     top_markers,
