@@ -6,6 +6,7 @@ from ._read import read_10x, read_10x_atac, read_cellbender
 from ._filter import filter_anndata
 from ._norm import normalize
 from ._hvg import hvg
+from ._highly_deviant_genes import highly_deviant_genes
 from ._pca import pca
 from ._neighbors import neighbors
 from ._umap import umap
