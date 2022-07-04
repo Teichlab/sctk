@@ -2,7 +2,7 @@
 Provides exported functions
 """
 
-from ._read import read_10x, read_10x_atac, read_cellbender
+from ._read import read_10x, read_10x_atac, read_h5ad, read_cellbender, read_velocyto
 from ._filter import filter_anndata
 from ._norm import normalize
 from ._hvg import hvg
@@ -33,6 +33,9 @@ from ._utils import (
     restore_adata,
     find_top_expressed_genes,
     remove_genes,
+    project_into_PC,
+    cross_table,
+    run_cNMF,
     run_harmony,
     run_bbknn,
     run_phate,
@@ -41,6 +44,7 @@ from ._utils import (
     subsample,
     pseudo_bulk,
     show_obs_categories,
+    write_10x_h5,
     write_mtx,
     write_table,
     write_cellxgene_object,
@@ -48,11 +52,12 @@ from ._utils import (
 from ._plot import (
     expression_colormap,
     clear_colors,
-    cross_table,
     set_figsize,
     abline,
+    heatmap,
     plot_df_heatmap,
-    plot_qc,
+    plot_qc_violin,
+    plot_qc_scatter,
     plot_metric_by_rank,
     plot_embedding,
     plot_markers,
@@ -60,6 +65,7 @@ from ._plot import (
     highlight,
     dotplot2,
     plot_genes,
+    plot_scatter,
 )
 from ._annot import (
     LR_train,
@@ -69,6 +75,7 @@ from ._annot import (
 from ._velocity import run_scvelo, plot_scvelo
 from ._pipeline import (
     calculate_qc,
+    generate_qc_clusters,
     get_good_sized_batch,
     simple_default_pipeline,
     recluster_subset,
@@ -79,8 +86,3 @@ from ._pipeline import (
     QcLowPassError,
     auto_filter_cells,
 )
-
-import scanpy
-from scanpy import *
-if scanpy.__version__.startswith('1.4'):
-    from scanpy.plotting._tools.scatterplots import plot_scatter
