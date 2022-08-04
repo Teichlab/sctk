@@ -171,7 +171,7 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
         "percent_ribo": (0, 100, "log", "both", 0.1),
         "percent_hb": (None, 1, "log", "max_only", 0.1),
         "percent_soup": (None, 5, "log", "max_only", 0.1),
-        "percent_spliced": (50, 98, "log", "both", 0.1),
+        "percent_spliced": (50, 97.5, "log", "both", 0.1),
         "scrublet_score": (None, 0.3, "linear", "max_only", 0.95),
     }
     if metrics is None:
@@ -350,6 +350,31 @@ def filter_qc_outlier(
 
     print(f"{k_pass.sum()}/{adata.n_obs} pass")
     return k_pass
+
+
+def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added=""):
+    key_fqo2 = key_added + ("_" if key_added else "") + "fqo2"
+    ad.obs[key_fqo2] = filter_qc_outlier2(ad, metrics=metrics)
+
+    if ad.obs[key_fqo2].sum() == 0:
+        ad.obs[key_fqo2] = (
+            (ad.obs.n_counts >= _metrics["n_counts"][0])
+            & (ad.obs.n_genes >= _metrics["n_genes"][0])
+            & (ad.obs.percent_mito < _metrics["percent_mito"][1])
+        )
+
+    if ad.obs[key_fqo2].astype(bool).sum() == 0:
+        good_qc_clusters = []
+    else:
+        good_qc_clusters = (
+            pd.crosstab(ad.obs.qc_cluster, ad.obs[key_fqo2].astype("category"), normalize="index")
+            .where(lambda x: x[1] >= threshold)
+            .dropna()
+            .index.tolist()
+        )
+
+    key_added = key_added if key_added else "good_qc_clusters"
+    ad.obs[key_added] = ad.obs["qc_cluster"].isin(good_qc_clusters)
 
 
 def get_good_sized_batch(batches, min_size=10):
