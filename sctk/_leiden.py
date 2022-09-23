@@ -35,7 +35,8 @@ def leiden(
         if sc.__version__.startswith("1.4") or legacy:
             adj_mat = adata.uns[use_graph]["connectivities"]
         else:
-            adj_mat = adata.obsp[f"{use_graph}_connectivities"]
+            ckey = adata.uns[use_graph]["connectivities_key"]
+            adj_mat = adata.obsp[ckey]
     if not isinstance(resolution, (list, tuple)):
         if key_added is not None and not key_added.startswith("leiden_"):
             key_added = f"leiden_{key_added}"
@@ -97,7 +98,8 @@ def leiden_shredding(
         if sc.__version__.startswith("1.4"):
             adj_mat = adata.uns[use_graph]["connectivities"]
         else:
-            adj_mat = adata.obsp[f"{use_graph}_connectivities"]
+            ckey = adata.uns[use_graph]["connectivities_key"]
+            adj_mat = adata.obsp[ckey]
     if key_added is not None and not key_added.startswith("leiden_"):
         key_added = f"leiden_{key_added}"
     elif key_added is None:

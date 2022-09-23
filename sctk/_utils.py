@@ -297,7 +297,7 @@ def cross_table(
         else:
             normaliser = np.tile(x_sizes.reshape(nx, 1), (1, ny)) + np.tile(
                 y_sizes.reshape(1, ny), (nx, 1)
-            )
+            ) - crs_tbl.values
         crs_tbl = (crs_tbl / normaliser).round(4)
     if sort in ("x", "index", "xy", "yx", "both"):
         crs_tbl = crs_tbl.sort_index()
@@ -1163,6 +1163,39 @@ def subsample(
     return adata[adata.obs_names.isin(sampled_obs_names)].copy()
 
 
+def random_partition(
+    adata,
+    partition_size,
+    groupby=None,
+    method="random",
+    key_added="partition_labels",
+    random_state=0,
+):
+    np.random.seed(random_state)
+    if groupby:
+        if groupby not in adata.obs.columns:
+            raise KeyError(f"{groupby} is not a valid obs annotation.")
+        groups = adata.obs[groupby].unique()
+        label_df = adata.obs[[groupby]].astype(str).rename(columns={groupby: key_added})
+        for grp in groups:
+            k = adata.obs[groupby] == grp
+            grp_size = sum(k)
+            n_partition = max(np.round(grp_size / partition_size), 1)
+            if method == "random":
+                part_idx = np.random.randint(low=0, high=n_partition, size=grp_size)
+            else:
+                raise NotImplementedError(method)
+            label_df.loc[k, key_added] = [f"{grp},{i}" for i in part_idx]
+        adata.obs[key_added] = label_df[key_added]
+    else:
+        n_partition = max(np.round(adata.n_obs / partition_size), 1)
+        if method == "random":
+            part_idx = np.random.randint(low=0, high=n_partition, size=adata.n_obs)
+        else:
+            raise NotImplementedError(method)
+        adata.obs[key_added] = part_idx.astype(str)
+
+
 def pseudo_bulk(adata, groupby, use_rep="X", FUN=np.mean):
     """Make pseudo bulk data from grouped sc data"""
     grouping = adata.obs[groupby]
@@ -1184,7 +1217,7 @@ def pseudo_bulk(adata, groupby, use_rep="X", FUN=np.mean):
     return pd.DataFrame(summarised.T, columns=groups, index=features)
 
 
-def summarise_expression_by_group(adata, groupby, use_rep="X"):
+def summarise_expression_by_group(adata, groupby, genes=None, use_rep="X"):
     grouping = adata.obs[groupby]
     if grouping.dtype.name != "category":
         grouping = grouping.astype("category")
@@ -1193,6 +1226,10 @@ def summarise_expression_by_group(adata, groupby, use_rep="X"):
     n_group = len(groups)
 
     x, features = _find_rep(adata, use_rep)
+    if genes is not None:
+        k_gene = np.in1d(features, genes).nonzero()[0]
+        x = x[:, k_gene]
+        features = features[k_gene]
     n_gene = features.size
 
     if sp.issparse(x):

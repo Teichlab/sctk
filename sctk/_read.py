@@ -101,7 +101,14 @@ def read_10x_atac(input_10x_mtx, extra_obs=None, extra_var=None):
     return adata
 
 
-def read_cellbender(input_h5, add_suffix=None):
+def read_cellbender(
+    input_h5,
+    remove_zero=True,
+    remove_nan=True,
+    train_history=False,
+    latent_gene_encoding=False,
+    add_suffix=None,
+):
     """
     Read cellbender output h5 generated from mtx input
     """
@@ -124,27 +131,62 @@ def read_cellbender(input_h5, add_suffix=None):
         feat_name = mat["gene_names"][()]
     else:
         raise ValueError("The data doesn't look like cellbender output")
+    n_var, n_obs = tuple(mat["shape"][()])
     cols = ["latent_cell_probability", "latent_RT_efficiency"]
-    obsdict = {x: mat[x] for x in cols}
+    if "barcode_indices_for_latents" in mat:
+        bidx = mat["barcode_indices_for_latents"][()]
+        obsdict = {}
+        for x in cols:
+            val = np.empty(n_obs)
+            val.fill(np.nan)
+            val[bidx] = mat[x][()]
+            obsdict[x] = val
+        if latent_gene_encoding:
+            lge = mat["latent_gene_encoding"][()]
+            obsm = np.empty((n_obs, lge.shape[1]))
+            obsm.fill(np.nan)
+            obsm[bidx, :] = lge
+    else:
+        obsdict = {x: mat[x] for x in cols}
+        if latent_gene_encoding:
+            obsm = mat["latent_gene_encoding"][()]
     barcodes = np.array(
         [b[:-2] if b.endswith("-1") else b for b in mat["barcodes"][()].astype(str)]
     )
     ad = anndata.AnnData(
         X=sp.csr_matrix(
             (mat["data"][()], mat["indices"][()], mat["indptr"][()]),
-            shape=(mat["shape"][1], mat["shape"][0]),
+            shape=(n_obs, n_var),
         ),
         var=pd.DataFrame(vardict, index=feat_name.astype(str)),
         obs=pd.DataFrame(obsdict, index=barcodes),
-        uns={"test_elbo": list(mat["test_elbo"]), "test_epoch": list(mat["test_epoch"])},
+        uns={
+            "target_false_positive_rate": mat["target_false_positive_rate"][()],
+            "test_elbo": list(mat["test_elbo"]),
+            "test_epoch": list(mat["test_epoch"]),
+            "training_elbo_per_epoch": list(mat["training_elbo_per_epoch"]),
+        }
+        if train_history
+        else {},
     )
     ad.var_names_make_unique()
+    if latent_gene_encoding:
+        ad.obsm["X_latent_gene_encoding"] = obsm
 
-    idx_0 = np.where(ad.X.sum(axis=1).A1 <= 0)[0]
+    mask_nan = np.isnan(ad.obs.latent_cell_probability)
+    mask_0 = ad.X.sum(axis=1).A1 <= 0
+
+    mask_remove = np.zeros(n_obs).astype(bool)
+    if remove_nan:
+        mask_remove = mask_remove | mask_nan
+    if remove_zero:
+        mask_remove = mask_remove | mask_0
+    idx_remove = np.where(mask_remove)[0]
+
     idx_sort = pd.Series(np.argsort(ad.obs_names))
-    idx_sort_pos = idx_sort[~idx_sort.isin(idx_0)]
+    idx_sort = idx_sort[~idx_sort.isin(idx_remove)]
 
-    ad1 = ad[idx_sort_pos.values].copy()
+    ad1 = ad[idx_sort.values].copy()
     del ad
 
     if add_suffix:

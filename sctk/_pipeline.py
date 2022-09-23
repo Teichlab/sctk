@@ -358,9 +358,9 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added=""):
 
     if ad.obs[key_fqo2].sum() == 0:
         ad.obs[key_fqo2] = (
-            (ad.obs.n_counts >= _metrics["n_counts"][0])
-            & (ad.obs.n_genes >= _metrics["n_genes"][0])
-            & (ad.obs.percent_mito < _metrics["percent_mito"][1])
+            (ad.obs.n_counts >= metrics["n_counts"][0])
+            & (ad.obs.n_genes >= metrics["n_genes"][0])
+            & (ad.obs.percent_mito < metrics["percent_mito"][1])
         )
 
     if ad.obs[key_fqo2].astype(bool).sum() == 0:

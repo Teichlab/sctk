@@ -8,12 +8,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sn
 from matplotlib import rcParams
-from matplotlib.colors import LinearSegmentedColormap, Normalize, to_hex
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Normalize, to_hex
 from matplotlib.lines import Line2D
 import anndata
 import scanpy as sc
 from ._diffexp import extract_de_table
-from ._utils import pseudo_bulk, summarise_expression_by_group, sc_warn
+from ._utils import pseudo_bulk, summarise_expression_by_group, sc_warn, cross_table
 
 if sc.__version__.startswith("1.4"):
     from scanpy.plotting._tools.scatterplots import plot_scatter
@@ -62,6 +62,8 @@ def make_palette(n, cmap=None, hide_first=False, hide_last=False, hide_color="#E
                 if n <= 48 + i + j
                 else sc_default_102[0 : (n - i - j)]
                 if n <= 102 + i + j
+                else sc_default_102 + sc_default_102[0 : (n - 102 - i - j)]
+                if n <= 204 + i + j
                 else ["grey"] * n
             )
     else:
@@ -118,10 +120,10 @@ def heatmap(
         return tbl.style.background_gradient(cmap="viridis", axis=stylize)
 
     if cluster:
-        fig = sn.clustermap(tbl, linewidths=0.01, cmap="viridis_r", figsize=figsize, **kwargs)
+        fig = sn.clustermap(tbl, linewidths=0.01, figsize=figsize, **kwargs)
     else:
         set_figsize(figsize)
-        fig = sn.heatmap(tbl, linewidths=0.01, cmap="viridis_r", **kwargs)
+        fig = sn.heatmap(tbl, linewidths=0.01, **kwargs)
     return fig
 
 
@@ -705,14 +707,19 @@ def plot_qc_scatter(
         metric_pairs = []
         if "n_genes" in obs_df.columns:
             metric_pairs.append(("log1p_n_counts", "log1p_n_genes"))
-        if "percent_mito" in obs_df.columns:
-            metric_pairs.append(("log1p_n_counts", "percent_mito"))
-        if "percent_ribo" in obs_df.columns:
-            metric_pairs.append(("log1p_n_counts", "percent_ribo"))
+        for pct_m in (
+            "percent_mito",
+            "percent_ribo",
+            "percent_top50",
+            "percent_soup",
+            "percent_spliced",
+        ):
+            if pct_m in obs_df.columns:
+                metric_pairs.append(("log1p_n_counts", pct_m))
         if "percent_mito" in obs_df.columns and "percent_ribo" in obs_df.columns:
-            metric_pairs.append(("percent_mito", "percent_ribo"))
-        if "percent_top50" in obs_df.columns:
-            metric_pairs.append(("log1p_n_counts", "percent_top50"))
+            metric_pairs.append(("log(percent_mito)", "percent_ribo"))
+        if "percent_soup" in obs_df.columns and "percent_spliced" in obs_df.columns:
+            metric_pairs.append(("log(percent_soup)", "percent_spliced"))
     n_pair = len(metric_pairs)
 
     def _logged_metric(m):
@@ -748,14 +755,16 @@ def plot_qc_scatter(
         if color_by in obs_df.columns:
             if obs_df[color_by].dtype.kind in ("i", "f"):
                 color_var = obs_df[color_by].values
-                color_var = (color_var - color_var.min()) / (color_var.max() - color_var.min())
+                # vmin = kwargs.pop("vmin", color_var.min())
+                # vmax = kwargs.pop("vmax", color_var.max())
+                # color_var = (color_var - vmin) / (vmax - vmin)
                 for i, mp in enumerate(metric_pairs):
                     m1, m2 = mp
                     panel = axs[i].scatter(
                         x=obs_df[m1],
                         y=obs_df[m2],
                         c=color_var,
-                        cmap="viridis",
+                        cmap=kwargs.pop("cmap", "viridis"),
                         s=point_size,
                         **kwargs,
                     )
@@ -763,7 +772,10 @@ def plot_qc_scatter(
                     axs[i].set_ylabel(m2)
                     axs[i].set_xscale(scales[i][0])
                     axs[i].set_yscale(scales[i][1])
-                fig.colorbar(panel)
+                if fig is not None:
+                    fig.subplots_adjust(right=1 - 0.2 / (i + 1))
+                    cbar_ax = fig.add_axes([1 - 0.2 / (i + 1) * 0.75, 0.15, 0.05 / (i + 1), 0.7])
+                    fig.colorbar(panel, cax=cbar_ax)
             else:
                 if pd.api.types.is_categorical_dtype(obs_df[color_by]):
                     color_var = obs_df[color_by].cat.categories
@@ -822,13 +834,20 @@ def plot_qc_scatter(
             for i, mp in enumerate(metric_pairs):
                 m1, m2 = mp
                 if use_hexbin:
-                    axs[i].hexbin(x=obs_df[m1], y=obs_df[m2], mincnt=1, cmap="binary")
+                    axs[i].hexbin(
+                        x=obs_df[m1],
+                        y=obs_df[m2],
+                        mincnt=1,
+                        xscale=scales[i][0],
+                        yscale=scales[i][1],
+                        cmap="viridis",
+                    )
                 else:
                     axs[i].scatter(x=obs_df[m1], y=obs_df[m2], color="k", s=point_size)
+                    axs[i].set_xscale(scales[i][0])
+                    axs[i].set_yscale(scales[i][1])
                 axs[i].set_xlabel(m1)
                 axs[i].set_ylabel(m2)
-                axs[i].set_xscale(scales[i][0])
-                axs[i].set_yscale(scales[i][1])
         if return_fig:
             return fig
     finally:
@@ -981,7 +1000,8 @@ def plot_embedding(
     color=None,
     annot=True,
     min_group_size=0,
-    highlight=None,
+    greyout_group=None,
+    highlight_group=None,
     size=None,
     use_uns_colors=True,
     save=None,
@@ -1019,13 +1039,14 @@ def plot_embedding(
     rename_dict2 = {ct: f"{i:^5d} {ct}" for i, ct in enumerate(categories)}
     restore_dict2 = {f"{i:^5d} {ct}": ct for i, ct in enumerate(categories)}
 
-    ad = adata
     marker_size = size
     kwargs["show"] = False
     kwargs["save"] = False
     kwargs["frameon"] = kwargs.get("frameon", None)
     kwargs["legend_loc"] = kwargs.get("legend_loc", "right margin")
 
+    if color is not None and color != groupby:
+        use_uns_colors = False
     color = groupby if color is None else color
     offset = 0 if "diffmap" in basis else -1
     xi, yi = 1, 2
@@ -1038,34 +1059,38 @@ def plot_embedding(
         adata.uns[f"{color}_colors"] = make_palette(
             adata.obs[color].cat.categories.size, kwargs.get("palette", None)
         )
-        if "nan" in adata.obs[color].cat.categories:
-            adata.uns[f"{color}_colors"][
-                np.where(adata.obs[color].cat.categories == "nan")[0][0]
-            ] = "#E0E0E0"
+        if greyout_group is not None:
+            if isinstance(greyout_group, str):
+                greyout_group = [greyout_group]
+            greyout_indices = np.where(
+                adata.obs[color].cat.categories.isin(greyout_group)
+            )[0]
+            for nan_i in greyout_indices:
+                adata.uns[f"{color}_colors"][nan_i] = "#E0E0E0"
 
-    if highlight:
-        k_nohl = np.where(~adata.obs[groupby].cat.categories.isin(highlight))[0]
-        for k in k_nohl:
-            ad.uns[f"{color}_colors"][k] = ad.uns[f"{color}_colors"][k] + "05"
+        if highlight_group is not None:
+            if isinstance(highlight_group, str):
+                highlight_group = [highlight_group]
+            nohl_indices = np.where(
+                ~adata.obs[color].cat.categories.isin(highlight_group)
+            )[0]
+            for nohl_i in nohl_indices:
+                adata.uns[f"{color}_colors"][nohl_i] = "#E0E0E0"
 
     if annot == "full":
         adata.obs[groupby].cat.rename_categories(rename_dict1, inplace=True)
-        if highlight:
-            ad.obs[groupby].cat.rename_categories(rename_dict1, inplace=True)
     elif annot in (None, False, "none"):
         kwargs["title"] = ""
         kwargs["legend_loc"] = None
     else:
         adata.obs[groupby].cat.rename_categories(rename_dict2, inplace=True)
-        if highlight:
-            ad.obs[groupby].cat.rename_categories(rename_dict2, inplace=True)
 
     try:
         if "ax" in kwargs:
             ax = kwargs["ax"]
-            plot_scatter(ad, basis=basis, color=color, size=marker_size, **kwargs)
+            plot_scatter(adata, basis=basis, color=color, size=marker_size, **kwargs)
         else:
-            ax = plot_scatter(ad, basis=basis, color=color, size=marker_size, **kwargs)
+            ax = plot_scatter(adata, basis=basis, color=color, size=marker_size, **kwargs)
     finally:
         if annot == "full":
             adata.obs[groupby].cat.rename_categories(restore_dict1, inplace=True)
@@ -1173,27 +1198,36 @@ def highlight(
             clear_colors(adata)
 
 
-def plot_composition(adata, composition, groupby, donor):
+def plot_composition(adata, composition, groupby, sample):
+    """Plot composition as a bar plot
+
+    composition: categorical variable in `obs` of which composition is of interest, e.g. cell type
+    groupby    : categorical variable in `obs` of which composition is calculated within
+    sample     : categorical variable in `obs` across which composition is averaged
+    """
     if not ((composition in adata.obs.columns) and (groupby in adata.obs.columns)):
         raise ValueError
     df = (
         pd.merge(
-            adata.obs[[donor, groupby]].drop_duplicates().set_index(donor),
-            cross_table(adata, donor, composition, normalise="x"),
+            adata.obs[[sample, groupby]].drop_duplicates().set_index(sample),
+            cross_table(adata, sample, composition, normalise="x"),
             left_index=True,
             right_index=True,
             how="right",
         )
         .groupby(groupby)
         .apply(np.mean)
-    )
+    ) * 100
     fig, ax = plt.subplots(1, 1)
     cmap = (
-        adata.uns[f"{composition}_colors"] if f"{composition}_colors" in adata.uns.keys() else None
+        ListedColormap(adata.uns[f"{composition}_colors"])
+        if f"{composition}_colors" in adata.uns.keys()
+        else None
     )
     df.plot.bar(stacked=True, width=0.8, edgecolor="k", linewidth=0.5, cmap=cmap, ax=ax)
     ax.set_ylim(102, -2)
     ax.set_yticklabels([102, 100, 80, 60, 40, 20, 0])
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
     return df, fig, ax
 
 
@@ -1207,6 +1241,7 @@ def plot_genes(
     figsize=(2, 2),
     xlim=None,
     ylim=None,
+    use_hexbin=False,
     save=None,
     **kwargs,
 ):
@@ -1219,35 +1254,58 @@ def plot_genes(
     n = len(found)
     sc_warn(f"{n} genes found")
     sc_warn(f'{",".join(not_found)} not found')
-    if title_func:
-        kwargs["title"] = list(map(title_func, found))
-    set_figsize(figsize)
     ncols = kwargs.pop("ncols", None) or int(24 / figsize[0])
-    axs = plot_scatter(
-        adata,
-        basis=basis,
-        color=found,
-        color_map=color_map,
-        ncols=ncols,
-        wspace=0,
-        hspace=0.2,
-        show=False,
-        gene_symbols=gene_symbols,
-        **kwargs,
-    )
-    if n < 2:
-        axs = [axs]
-    for i, ax in enumerate(axs):
-        ax.tick_params(which="both", bottom=False, top=False, left=False, right=False)
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        if xlim:
-            ax.set_xlim(xlim)
-        if ylim:
-            ax.set_ylim(xlim)
-        plt.gcf().axes[-(i + 1)].remove()
-    if save:
-        plt.savefig(fname=save, bbox_inches="tight", pad_inches=0.1)
+
+    titles = list(map(title_func, found)) if title_func else found
+
+    if use_hexbin:
+        nrows = int(np.ceil(n / ncols))
+        ncols = min(ncols, n)
+        set_figsize((figsize[0] * ncols, figsize[1] * nrows))
+        fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, squeeze=False)
+        cm = LinearSegmentedColormap.from_list("custom gradient", ["#EEEEEE", "#FF0000"], N=256)
+        for i in range(n):
+            ax = axs[i // ncols, i % ncols]
+            ax.hexbin(
+                x=adata.obsm[f"X_{basis}"][:, 0],
+                y=adata.obsm[f"X_{basis}"][:, 1],
+                C=adata.obs_vector(found[i]),
+                cmap=cm,
+                **kwargs,
+            )
+            ax.set_title(titles[i])
+            ax.set_xticks([])
+            ax.set_yticks([])
+        if save:
+            fig.savefig(fname=save, bbox_inches="tight", pad_inches=0.1)
+    else:
+        set_figsize(figsize)
+        kwargs["title"] = titles
+        axs = plot_scatter(
+            adata,
+            basis=basis,
+            color=found,
+            color_map=color_map,
+            ncols=ncols,
+            wspace=0,
+            hspace=0.2,
+            show=False,
+            gene_symbols=gene_symbols,
+            **kwargs,
+        )
+        if n < 2:
+            axs = [axs]
+        for i, ax in enumerate(axs):
+            ax.tick_params(which="both", bottom=False, top=False, left=False, right=False)
+            ax.set_xlabel("")
+            ax.set_ylabel("")
+            if xlim:
+                ax.set_xlim(xlim)
+            if ylim:
+                ax.set_ylim(xlim)
+            plt.gcf().axes[-(i + 1)].remove()
+        if save:
+            plt.savefig(fname=save, bbox_inches="tight", pad_inches=0.1)
 
 
 def plot_markers(
@@ -1322,3 +1380,79 @@ def plot_diffexp(
 
     rcParams.update({"figure.figsize": figsize1})
     plot_embedding(adata, basis=basis, groupby=grouping, size=dotsize, show=False)
+
+
+def plot_cellbender_qc(
+    ad, raw_nUMI_name="n_counts_raw", nUMI_name="n_counts", title=None, ax=None, overlay_soup=False
+):
+    if raw_nUMI_name not in ad.obs.columns:
+        raise ValueError("Cannot find raw nUMI info in `obs`")
+
+    n_ax = 1
+    train_history_found = (
+        "test_epoch" in ad.uns.keys()
+        and "test_elbo" in ad.uns.keys()
+        and "training_elbo_per_epoch" in ad.uns.keys()
+    )
+    latent_gene_encoding_found = "X_latent_gene_encoding" in ad.obsm.keys()
+    if train_history_found:
+        n_ax += 1
+    if latent_gene_encoding_found:
+        n_ax += 1
+
+    if ax is None:
+        fig, ax = plt.subplots(nrows=1, ncols=n_ax, gridspec_kw={"wspace": 0.5})
+
+    raw_nUMI = ad.obs[raw_nUMI_name].values
+    if nUMI_name not in ad.obs.columns:
+        nUMI = ad.X.sum(axis=1).A1
+    else:
+        nUMI = ad.obs[nUMI_name].values
+    k1 = np.argsort(raw_nUMI)[::-1]
+    y1 = raw_nUMI[k1]
+    y2 = nUMI[k1]
+    cell_prob = ad.obs["latent_cell_probability"].values
+    y3 = cell_prob[k1]
+    y4 = (1 - nUMI / raw_nUMI)[k1]
+    x1 = np.arange(ad.n_obs) + 1
+    ax[0].plot(y1 + 1, c="black", label="raw")
+    ax[0].scatter(x1, y2 + 1, s=0.1, c="blue", label="CB", rasterized=True)
+    ax[0].set_yscale("log")
+    ax[0].set_xlabel("Rank")
+    ax[0].legend()
+    ax[0].set_ylabel("nUMI")
+    ax0b = ax[0].twinx()
+    ax0b.scatter(x1, y3, s=0.1, c="red", alpha=0.5, label="p", rasterized=True)
+    ax0b.set_ylim(-0.02, 1.02)
+    if overlay_soup:
+        ax0c = ax[0].twinx()
+        ax0c.scatter(x1, y4, s=0.1, c="yellow", alpha=0.5, label="f", rasterized=True)
+        ax0c.set_ylim(-0.02, 1.02)
+        ax0b.set_ylabel("Cell probability (red) / soup fraction (yellow)")
+    else:
+        ax0b.set_ylabel("Cell probability", color="red")
+
+    if train_history_found:
+        y5 = ad.uns["training_elbo_per_epoch"]
+        x2 = ad.uns["test_epoch"]
+        y6 = ad.uns["test_elbo"]
+        ax[1].plot(y5, c="black", label="train")
+        ax[1].scatter(x2, y6, s=2, c="blue", label="test", rasterized=True)
+        ax[1].set_xlabel("Epoch")
+        ax[1].set_ylabel("Elbo")
+        ax[1].legend()
+
+    if latent_gene_encoding_found:
+        from sklearn.decomposition import PCA
+
+        pca = PCA(n_components=2, svd_solver="arpack")
+        pcs = pca.fit_transform(ad.obsm["X_latent_gene_encoding"][cell_prob >= 0.5])
+        ax[-1].hexbin(pcs[:, 0], pcs[:, 1], bins="log", cmap="viridis")
+        ax[-1].set_xlabel("PC1")
+        ax[-1].set_ylabel("PC2")
+
+    if title:
+        ax[0].get_figure().suptitle(title, weight="bold")
+
+    if ax is None:
+        return fig
