@@ -1167,7 +1167,7 @@ def random_partition(
     adata,
     partition_size,
     groupby=None,
-    method="random",
+    method="random_even",
     key_added="partition_labels",
     random_state=0,
 ):
@@ -1180,17 +1180,25 @@ def random_partition(
         for grp in groups:
             k = adata.obs[groupby] == grp
             grp_size = sum(k)
-            n_partition = max(np.round(grp_size / partition_size), 1)
+            n_partition = max(np.round(grp_size / partition_size).astype(int), 1)
             if method == "random":
                 part_idx = np.random.randint(low=0, high=n_partition, size=grp_size)
+            elif method == "random_even":
+                part_sizes = list(map(len, np.array_split(np.arange(grp_size), n_partition)))
+                part_idx = np.repeat(np.arange(n_partition), part_sizes)
+                np.random.shuffle(part_idx)
             else:
                 raise NotImplementedError(method)
             label_df.loc[k, key_added] = [f"{grp},{i}" for i in part_idx]
         adata.obs[key_added] = label_df[key_added]
     else:
-        n_partition = max(np.round(adata.n_obs / partition_size), 1)
+        n_partition = max(np.round(adata.n_obs / partition_size).astype(int), 1)
         if method == "random":
             part_idx = np.random.randint(low=0, high=n_partition, size=adata.n_obs)
+        elif method == "random_even":
+            part_sizes = list(map(len, np.array_split(np.arange(adata.n_obs), n_partition)))
+            part_idx = np.repeat(np.arange(n_partition), part_sizes)
+            np.random.shuffle(part_idx)
         else:
             raise NotImplementedError(method)
         adata.obs[key_added] = part_idx.astype(str)
