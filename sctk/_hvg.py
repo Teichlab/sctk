@@ -9,13 +9,13 @@ from ._utils import sc_warn
 
 
 def hvg(
-        adata,
-        mean_limits=(0.0125, 3),
-        disp_limits=(0.5, float('inf')),
-        subset=False,
-        by_batch=None,
-        n_hvg=None,
-        **kwargs,
+    adata,
+    mean_limits=(0.0125, 3),
+    disp_limits=(0.5, float("inf")),
+    subset=False,
+    by_batch=None,
+    n_hvg=None,
+    **kwargs,
 ):
     """
     Wrapper function for sc.highly_variable_genes(), mainly to support searching
@@ -24,11 +24,11 @@ def hvg(
 
     # Check for n_top_genes beeing greater than the total genes
 
-    if 'n_top_genes' in kwargs and kwargs['n_top_genes'] is not None:
-        kwargs['n_top_genes'] = min(adata.n_vars, kwargs['n_top_genes'])
+    if "n_top_genes" in kwargs and kwargs["n_top_genes"] is not None:
+        kwargs["n_top_genes"] = min(adata.n_vars, kwargs["n_top_genes"])
 
     if by_batch and isinstance(by_batch, (list, tuple)) and by_batch[0]:
-        kwargs['batch_key'] = by_batch[0]
+        kwargs["batch_key"] = by_batch[0]
 
     sc.pp.highly_variable_genes(
         adata,
@@ -50,8 +50,8 @@ def hvg(
                 min_n = 1
             else:
                 min_n = n_cum[n_cum > n_hvg].index[0]
-        sc_warn(f'n_hvg = {(k_hvg >= min_n).sum()} found in at least {min_n} batches')
+        sc_warn(f"n_hvg = {(k_hvg >= min_n).sum()} found in at least {min_n} batches")
         if subset:
             adata = adata[:, k_hvg.values >= min_n]
         else:
-            adata.var['highly_variable'] = k_hvg >= min_n
+            adata.var["highly_variable"] = k_hvg >= min_n
