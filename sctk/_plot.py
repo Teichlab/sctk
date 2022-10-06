@@ -577,6 +577,11 @@ def dotplot3(adata, groupby, use_rep="X", order_gene_by="frac", order_group_by="
     from sklearn.preprocessing import minmax_scale
     from seriate import seriate
 
+    if order_gene_by not in ("frac", "avg", None):
+        raise ValueError("`order_gene_by` must be one of 'frac', 'avg' or None")
+    if order_group_by not in ("frac", "avg", None):
+        raise ValueError("`order_group_by` must be one of 'frac', 'avg' or None")
+
     dotplot_data = summarise_expression_by_group(adata, groupby, use_rep=use_rep)
 
     if order_gene_by is not None:
