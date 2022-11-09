@@ -34,6 +34,7 @@ from ._markers import (
 )
 from ._utils import (
     cross_table,
+    dummy_to_categorical,
     expand_feature_space,
     find_top_expressed_genes,
     lognorm_to_counts,
