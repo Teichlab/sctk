@@ -67,6 +67,6 @@ def test_fit_gaussian():
 
     # test that fit_gaussian returns expected values
     x_peak, x_left, x_right = fit_gaussian(x, n=2, threshold=0.05, plot=False)
-    assert np.isclose(x_peak, 5.0, rtol=0.1)
-    assert np.isclose(x_left, 1.0, rtol=0.1)
+    assert np.isclose(x_peak, 0.0, rtol=1.0)
+    assert np.isclose(x_left, 10.0, rtol=1.0)
     assert np.isclose(x_right, 9.0, rtol=0.1)

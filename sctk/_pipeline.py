@@ -51,7 +51,47 @@ def calculate_qc(
     flag_only=False,
     suffix="",
     **kwargs,
-):
+) -> None:
+    """
+    Calculate quality control (QC) metrics for an AnnData object. The object is
+    modified in-place.
+
+    Args:
+        adata: AnnData object to calculate QC metrics for.
+
+        flags: Dictionary of QC flags and regular expression patterns to match
+        gene names against.
+
+        extra_flags: Additional QC flags and patterns to add to `flags`.
+
+        flag_only: If True, only calculate QC flags and do not calculate other
+        metrics.
+
+        suffix: Suffix to append to QC metric names.
+
+        **kwargs: Additional keyword arguments to pass to
+        *`scanpy.pp.calculate_qc_metrics`.
+
+    Returns:
+        None.
+
+    Raises:
+        None.
+
+    Examples:
+        >>> import anndata
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> import scanpy as sc
+        >>> from my_module import calculate_qc
+        >>> adata = anndata.AnnData(
+        ...     X=np.random.rand(100, 100),
+        ...     obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
+        ...     var=pd.DataFrame(index=[f"gene{i}" for i in range(100)]),
+        ... )
+        >>> calculate_qc(adata)
+
+    """
     if extra_flags:
         for k, v in extra_flags.items():
             flags[k] = v
@@ -60,7 +100,9 @@ def calculate_qc(
     for flag, pattern in flags.items():
         if flag not in adata.var.columns and pattern:
             pat = re.compile(pattern)
-            adata.var[flag] = np.array([bool(pat.search(g)) for g in adata.var_names])
+            adata.var[flag] = np.array(
+                [bool(pat.search(g)) for g in adata.var_names]
+            )
         if flag in adata.var.columns:
             qc_vars.append(flag)
 
@@ -69,24 +111,42 @@ def calculate_qc(
 
     qc_vars.extend([flag for flag in extra_flags if flag in adata.var.columns])
 
-    qc_tbls = sc.pp.calculate_qc_metrics(adata, qc_vars=qc_vars, percent_top=[50], **kwargs)
+    qc_tbls = sc.pp.calculate_qc_metrics(
+        adata, qc_vars=qc_vars, percent_top=[50], **kwargs
+    )
 
     adata.obs[f"n_counts{suffix}"] = qc_tbls[0]["total_counts"].values
-    adata.obs[f"log1p_n_counts{suffix}"] = np.log1p(adata.obs[f"n_counts{suffix}"])
+    adata.obs[f"log1p_n_counts{suffix}"] = np.log1p(
+        adata.obs[f"n_counts{suffix}"]
+    )
     adata.obs[f"n_genes{suffix}"] = qc_tbls[0]["n_genes_by_counts"].values
-    adata.obs[f"log1p_n_genes{suffix}"] = np.log1p(adata.obs[f"n_genes{suffix}"])
+    adata.obs[f"log1p_n_genes{suffix}"] = np.log1p(
+        adata.obs[f"n_genes{suffix}"]
+    )
     for metric in qc_vars:
-        adata.obs[f"percent_{metric}{suffix}"] = qc_tbls[0][f"pct_counts_{metric}"].values
+        adata.obs[f"percent_{metric}{suffix}"] = qc_tbls[0][
+            f"pct_counts_{metric}"
+        ].values
         adata.obs[f"n_counts_{metric}{suffix}"] = (
-            qc_tbls[0][f"pct_counts_{metric}"].values * qc_tbls[0]["total_counts"].values / 100
+            qc_tbls[0][f"pct_counts_{metric}"].values
+            * qc_tbls[0]["total_counts"].values
+            / 100
         )
-    adata.obs[f"percent_top50{suffix}"] = qc_tbls[0]["pct_counts_in_top_50_genes"].values
+    adata.obs[f"percent_top50{suffix}"] = qc_tbls[0][
+        "pct_counts_in_top_50_genes"
+    ].values
     adata.var[f"n_counts{suffix}"] = qc_tbls[1]["total_counts"].values
     adata.var[f"n_cells{suffix}"] = qc_tbls[1]["n_cells_by_counts"].values
 
 
 def generate_qc_clusters(
-    ad, metrics, aux_ad=None, n_pcs=None, n_neighbors=None, res=0.2, return_aux=False
+    ad,
+    metrics,
+    aux_ad=None,
+    n_pcs=None,
+    n_neighbors=None,
+    res=0.2,
+    return_aux=False,
 ):
     if aux_ad is None:
         n_pcs = max(2, len(metrics) - 2) if n_pcs is None else n_pcs
@@ -114,7 +174,14 @@ def _scale_factor(x):
 
 
 def fit_gaussian(
-    x, n=10, threshold=0.05, xmin=None, xmax=None, plot=False, nbins=500, hist_bins=100
+    x,
+    n=10,
+    threshold=0.05,
+    xmin=None,
+    xmax=None,
+    plot=False,
+    nbins=500,
+    hist_bins=100,
 ):
     xmin = x.min() if xmin is None else xmin
     xmax = x.max() if xmax is None else xmax
@@ -130,11 +197,19 @@ def fit_gaussian(
     y_cdf = np.zeros((n, nbins))
     for i in range(n):
         y_pdf[i] = (
-            norm.pdf(x0 * f, loc=gmm.means_[i, 0], scale=n * gmm.covariances_[i, 0, 0])
+            norm.pdf(
+                x0 * f,
+                loc=gmm.means_[i, 0],
+                scale=n * gmm.covariances_[i, 0, 0],
+            )
             * gmm.weights_[i]
         )
         y_cdf[i] = (
-            norm.cdf(x0 * f, loc=gmm.means_[i, 0], scale=n * gmm.covariances_[i, 0, 0])
+            norm.cdf(
+                x0 * f,
+                loc=gmm.means_[i, 0],
+                scale=n * gmm.covariances_[i, 0, 0],
+            )
             * gmm.weights_[i]
         )
     y0 = y_pdf.sum(axis=0)
@@ -154,8 +229,20 @@ def fit_gaussian(
         _ = ax1.hist(x, bins=hist_bins)
         ax2 = ax1.twinx()
         ax2.plot(x0, y0, c="k")
-        ax2.hlines(y=threshold, xmin=x.min(), xmax=x.max(), linewidth=1, linestyle="dotted")
-        ax2.vlines(x=[xmin, xmax], ymin=y0.min(), ymax=y0.max(), linewidth=1, linestyle="dashed")
+        ax2.hlines(
+            y=threshold,
+            xmin=x.min(),
+            xmax=x.max(),
+            linewidth=1,
+            linestyle="dotted",
+        )
+        ax2.vlines(
+            x=[xmin, xmax],
+            ymin=y0.min(),
+            ymax=y0.max(),
+            linewidth=1,
+            linestyle="dashed",
+        )
         if not np.isnan(x_left):
             ax2.vlines(x=x_left, ymin=y0.min(), ymax=y0.max(), linewidth=1)
         if not np.isnan(x_right):
@@ -177,7 +264,9 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
     if metrics is None:
         metric_params = default_metric_params
     elif isinstance(metrics, (list, tuple)):
-        metric_params = {k: v for k, v in default_metric_params.items() if k in metrics}
+        metric_params = {
+            k: v for k, v in default_metric_params.items() if k in metrics
+        }
     elif isinstance(metrics, dict) and all(
         k in adata.obs.columns and len(v) == 5 for k, v in metrics.items()
     ):
@@ -224,8 +313,8 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
                 m_pass = (min_x <= x) & (x <= max_x)
         pass_filter[m] = m_pass
 
-        x_low_str = x_low if scale == 'linear' else np.expm1(x_low)
-        x_high_str = x_high if scale == 'linear' else np.expm1(x_high)
+        x_low_str = x_low if scale == "linear" else np.expm1(x_low)
+        x_high_str = x_high if scale == "linear" else np.expm1(x_high)
         print(
             f"{m}: [{x_low_str}, {x_high_str}], {pass_filter[m].sum()}/{n_obs} passed"
         )
@@ -239,7 +328,14 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
 
 def filter_qc_outlier(
     adata,
-    metrics=["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb", "percent_top50"],
+    metrics=[
+        "n_counts",
+        "n_genes",
+        "percent_mito",
+        "percent_ribo",
+        "percent_hb",
+        "percent_top50",
+    ],
     min_count=1000,
     min_gene=100,
     min_mito=0.01,
@@ -261,12 +357,21 @@ def filter_qc_outlier(
                 adata.obs["log1p_n_counts"].values, xmin=np.log1p(min_count)
             )
         except ValueError:
-            x_low, x_high = np.log1p(min_count), adata.obs["log1p_n_counts"].max()
+            x_low, x_high = (
+                np.log1p(min_count),
+                adata.obs["log1p_n_counts"].max(),
+            )
         x_low = max(np.log1p(250), x_low)
         min_count = int(np.expm1(x_low))
-        max_count = adata.obs["n_counts"].max() if onesided else int(np.expm1(x_high))
-        k_count = (adata.obs["n_counts"] >= min_count) & (adata.obs["n_counts"] <= max_count)
-        print(f"n_counts: [{min_count}, {max_count}], {k_count.sum()}/{adata.n_obs} pass")
+        max_count = (
+            adata.obs["n_counts"].max() if onesided else int(np.expm1(x_high))
+        )
+        k_count = (adata.obs["n_counts"] >= min_count) & (
+            adata.obs["n_counts"] <= max_count
+        )
+        print(
+            f"n_counts: [{min_count}, {max_count}], {k_count.sum()}/{adata.n_obs} pass"
+        )
         if k_count.sum() < adata.n_obs * min_pass_rate and not force:
             raise QcLowPassError("n_counts")
         k_pass = k_pass & k_count
@@ -280,9 +385,15 @@ def filter_qc_outlier(
             x_low, x_high = np.log1p(min_gene), adata.obs["log1p_n_genes"].max()
         x_low = max(np.log1p(50), x_low)
         min_gene = int(np.expm1(x_low))
-        max_gene = adata.obs["n_genes"].max() if onesided else int(np.expm1(x_high))
-        k_gene = (adata.obs["n_genes"] >= min_gene) & (adata.obs["n_genes"] <= max_gene)
-        print(f"n_genes: [{min_gene}, {max_gene}], {k_gene.sum()}/{adata.n_obs} pass")
+        max_gene = (
+            adata.obs["n_genes"].max() if onesided else int(np.expm1(x_high))
+        )
+        k_gene = (adata.obs["n_genes"] >= min_gene) & (
+            adata.obs["n_genes"] <= max_gene
+        )
+        print(
+            f"n_genes: [{min_gene}, {max_gene}], {k_gene.sum()}/{adata.n_obs} pass"
+        )
         if k_gene.sum() < adata.n_obs * min_pass_rate and not force:
             raise QcLowPassError("n_genes")
         k_pass = k_pass & k_gene
@@ -296,7 +407,9 @@ def filter_qc_outlier(
             )
             max_mito = np.expm1(x_high)
         k_mito = adata.obs["percent_mito"] <= max_mito
-        print(f"percent_mito: [0, {max_mito}], {k_mito.sum()}/{adata.n_obs} pass")
+        print(
+            f"percent_mito: [0, {max_mito}], {k_mito.sum()}/{adata.n_obs} pass"
+        )
         if k_mito.sum() < adata.n_obs * min_pass_rate and not force:
             raise QcLowPassError("percent_mito")
         k_pass = k_pass & k_mito
@@ -309,8 +422,12 @@ def filter_qc_outlier(
         )
         min_ribo = np.expm1(x_low)
         max_ribo = np.expm1(x_high)
-        k_ribo = (adata.obs["percent_ribo"] >= min_ribo) & (adata.obs["percent_ribo"] <= max_ribo)
-        print(f"percent_ribo: [{min_ribo}, {max_ribo}], {k_ribo.sum()}/{adata.n_obs} pass")
+        k_ribo = (adata.obs["percent_ribo"] >= min_ribo) & (
+            adata.obs["percent_ribo"] <= max_ribo
+        )
+        print(
+            f"percent_ribo: [{min_ribo}, {max_ribo}], {k_ribo.sum()}/{adata.n_obs} pass"
+        )
         if k_ribo.sum() < adata.n_obs * min_pass_rate and not force:
             raise QcLowPassError("percent_ribo")
         k_pass = k_pass & k_ribo
@@ -331,19 +448,27 @@ def filter_qc_outlier(
         k_top50 = (adata.obs["percent_top50"] <= max_top50) & (
             adata.obs["percent_top50"] >= min_top50
         )
-        print(f"percent_top50: [{min_top50}, {max_top50}], {k_top50.sum()}/{adata.n_obs} pass")
+        print(
+            f"percent_top50: [{min_top50}, {max_top50}], {k_top50.sum()}/{adata.n_obs} pass"
+        )
         if k_top50.sum() < adata.n_obs * min_pass_rate and not force:
             raise QcLowPassError("percent_top50")
         k_pass = k_pass & k_top50
 
     if "scrublet_score_z" in metrics:
         x_low, x_high, _ = fit_gaussian(
-            adata.obs["scrublet_score_z"].values, n=10, xmin=-99, xmax=10, threshold=0.05
+            adata.obs["scrublet_score_z"].values,
+            n=10,
+            xmin=-99,
+            xmax=10,
+            threshold=0.05,
         )
         max_sz = x_high
         min_sz = x_low
         k_sz = adata.obs["scrublet_score_z"] <= max_sz
-        print(f"scrublet_score_z: [{min_sz}, {max_sz}], {k_sz.sum()}/{adata.n_obs} pass")
+        print(
+            f"scrublet_score_z: [{min_sz}, {max_sz}], {k_sz.sum()}/{adata.n_obs} pass"
+        )
         if k_sz.sum() < adata.n_obs * min_pass_rate and not force:
             raise QcLowPassError("scrublet_score_z")
         k_pass = k_pass & k_sz
@@ -367,7 +492,11 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added=""):
         good_qc_clusters = []
     else:
         good_qc_clusters = (
-            pd.crosstab(ad.obs.qc_cluster, ad.obs[key_fqo2].astype("category"), normalize="index")
+            pd.crosstab(
+                ad.obs.qc_cluster,
+                ad.obs[key_fqo2].astype("category"),
+                normalize="index",
+            )
             .where(lambda x: x[1] >= threshold)
             .dropna()
             .index.tolist()
@@ -398,7 +527,13 @@ def simple_default_pipeline(
     batch: Union[str, Union[list, tuple], None] = None,
     batch_method: Optional[str] = "harmony",
     random_state: int = 0,
-    clustering_resolution: Union[float, list, tuple] = [0.1, 0.3, 0.5, 0.7, 0.9],
+    clustering_resolution: Union[float, list, tuple] = [
+        0.1,
+        0.3,
+        0.5,
+        0.7,
+        0.9,
+    ],
     use_gpu: Union[bool, str] = False,
     use_hvg: Union[list, tuple, None] = None,
     filter_kw: dict = {},
@@ -447,7 +582,9 @@ def simple_default_pipeline(
     subset_hvg = hvg_kw.get("subset", False)
     if not (post_norm_only or post_pca_only):
         if not use_hvg and hvg_kw.get("flavor", "seurat") == "seurat_v3":
-            aux_ad = anndata.AnnData(X=adata.X, obs=adata.obs.copy(), var=adata.var.copy())
+            aux_ad = anndata.AnnData(
+                X=adata.X, obs=adata.obs.copy(), var=adata.var.copy()
+            )
             if not sc._utils.check_nonnegative_integers(aux_ad.X):
                 aux_ad.X = np.round(aux_ad.X)
                 n_cells = (adata.layers["counts"] > 0).sum(axis=0)
@@ -469,10 +606,14 @@ def simple_default_pipeline(
         if adata.raw is None:
             adata.raw = adata
         else:
-            adata.X = adata.raw.X[:, adata.raw.var_names.isin(adata.var_names)].copy()
+            adata.X = adata.raw.X[
+                :, adata.raw.var_names.isin(adata.var_names)
+            ].copy()
         if "n_counts" not in adata.var.keys():
             n_counts = np.expm1(adata.X).sum(axis=0)
-            adata.var["n_counts"] = n_counts.A1 if sp.issparse(adata.X) else n_counts
+            adata.var["n_counts"] = (
+                n_counts.A1 if sp.issparse(adata.X) else n_counts
+            )
         n_cells = (adata.X > 0).sum(axis=0)
         adata.var["n_cells"] = n_cells.A1 if sp.issparse(adata.X) else n_cells
         k_gene = adata.var["n_cells"] >= 3
@@ -488,7 +629,9 @@ def simple_default_pipeline(
             hvg(adata, **hvg_kw)
         if hvg_only:
             return adata
-        zero_center = (adata.n_obs <= 20000) if zero_center is None else zero_center
+        zero_center = (
+            (adata.n_obs <= 20000) if zero_center is None else zero_center
+        )
         if zero_center or rgs_kw:
             adata = adata[:, adata.var.highly_variable.values].copy()
         if rgs_kw:
@@ -564,7 +707,9 @@ def simple_default_pipeline(
                     key_added=key_added,
                 )
     else:
-        sc.pp.neighbors(adata, use_rep="X_pca", n_pcs=n_pcs, n_neighbors=n_neighbors)
+        sc.pp.neighbors(
+            adata, use_rep="X_pca", n_pcs=n_pcs, n_neighbors=n_neighbors
+        )
         umap(
             adata,
             method="rapids" if use_gpu == "all" else None,
@@ -572,30 +717,44 @@ def simple_default_pipeline(
             **umap_kw,
         )
         if do_clustering:
-            leiden(adata, flavor="rapids" if use_gpu else None, resolution=clustering_resolution)
+            leiden(
+                adata,
+                flavor="rapids" if use_gpu else None,
+                resolution=clustering_resolution,
+            )
 
     return adata
 
 
-def recluster_subset(adata, groupby, groups, res, new_key, ad_aux=None, **kwargs):
+def recluster_subset(
+    adata, groupby, groups, res, new_key, ad_aux=None, **kwargs
+):
     kwargs["post_norm_only"] = True
     kwargs["do_clustering"] = False
     if isinstance(res, (list, tuple)):
         res = res[0]
     if "batch" in kwargs:
-        graph = "neighbors_bk" if kwargs["batch_method"] == "bbknn" else "neighbors_hm"
+        graph = (
+            "neighbors_bk"
+            if kwargs["batch_method"] == "bbknn"
+            else "neighbors_hm"
+        )
     else:
         graph = "neighbors"
     k_groups = adata.obs[groupby].isin(groups)
     if ad_aux is None:
-        ad = restore_adata(adata[k_groups].copy(), restore_type="norm", use_raw=True)
+        ad = restore_adata(
+            adata[k_groups].copy(), restore_type="norm", use_raw=True
+        )
         ad_aux = simple_default_pipeline(ad, **kwargs)
         return_ad = True
     else:
         return_ad = False
     leiden(ad_aux, use_graph=graph, resolution=res, key_added="aux")
     adata.obs[new_key] = adata.obs[groupby].astype(str)
-    adata.obs.loc[k_groups, new_key] = "_".join(groups) + "," + ad_aux.obs["leiden_aux"].astype(str)
+    adata.obs.loc[k_groups, new_key] = (
+        "_".join(groups) + "," + ad_aux.obs["leiden_aux"].astype(str)
+    )
     if return_ad:
         return ad_aux
 
@@ -631,7 +790,10 @@ def auto_zoom_in(
                 key_added=f"split{i}",
                 **leiden_kw,
             )
-            if ad.obs[new_grp_key].cat.categories.size > ad.obs[prev_grp_key].cat.categories.size:
+            if (
+                ad.obs[new_grp_key].cat.categories.size
+                > ad.obs[prev_grp_key].cat.categories.size
+            ):
                 subclustered = True
                 break
             elif res < max_res:
@@ -642,11 +804,16 @@ def auto_zoom_in(
         if subclustered:
             print("find_marker", end=" ")
             new_groups = ad.obs[new_grp_key].cat.categories[
-                ~ad.obs[new_grp_key].cat.categories.isin(ad.obs[prev_grp_key].cat.categories)
+                ~ad.obs[new_grp_key].cat.categories.isin(
+                    ad.obs[prev_grp_key].cat.categories
+                )
             ]
             mkst = calc_marker_stats(ad, groupby=new_grp_key)
             mks = filter_marker_stats(mkst[2], **marker_kw)
-            if new_groups.isin(mks.top_frac_group.unique()).sum() == new_groups.size:
+            if (
+                new_groups.isin(mks.top_frac_group.unique()).sum()
+                == new_groups.size
+            ):
                 prev_grp_key = new_grp_key
                 i += 1
                 print("done", end="")
@@ -676,13 +843,19 @@ def custom_pipeline(
     combat_args={"key": None},
     hvg_params={"flavor": "seurat", "by_batch": None},
     scale_params={"max_value": 10},
-    pca_params={"n_comps": 50, "svd_solver": "arpack", "use_highly_variable": True},
+    pca_params={
+        "n_comps": 50,
+        "svd_solver": "arpack",
+        "use_highly_variable": True,
+    },
     harmony_params={"batch": None, "theta": 2.0},
     nb_params={"n_neighbors": 15, "n_pcs": 20},
     umap_params={},
     tsne_params={},
     diffmap_params={"n_comps": 15},
-    leiden_params={"resolution": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]},
+    leiden_params={
+        "resolution": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    },
     fdg_params={"layout": "fa"},
 ):
     """
@@ -692,7 +865,9 @@ def custom_pipeline(
         calculate_qc(adata)
         if plot:
             plot_qc_violin(
-                adata, groupby=batch, one_per_line=adata.obs[batch].cat.categories.size > 10
+                adata,
+                groupby=batch,
+                one_per_line=adata.obs[batch].cat.categories.size > 10,
             )
             plot_qc_scatter(adata, use_hexbin=True)
     else:
@@ -748,7 +923,8 @@ def custom_pipeline(
         if pca_params is not None and isinstance(pca_params, dict):
             pca(adata, **pca_params)
         if harmony_params is not None and (
-            isinstance(harmony_params, dict) and harmony_params.get("batch", None)
+            isinstance(harmony_params, dict)
+            and harmony_params.get("batch", None)
         ):
             from ._utils import run_harmony
 
@@ -777,7 +953,13 @@ def save_pipeline_object(
     uns_keys=[],
 ):
     if batch_method is None:
-        obs_keys = ["leiden_r0_1", "leiden_r0_3", "leiden_r0_5", "leiden_r0_7", "leiden_r0_9"]
+        obs_keys = [
+            "leiden_r0_1",
+            "leiden_r0_3",
+            "leiden_r0_5",
+            "leiden_r0_7",
+            "leiden_r0_9",
+        ]
         obsm_keys = ["X_pca"]
     elif batch_method == "harmony":
         obs_keys = [
@@ -843,7 +1025,10 @@ def integrate(
     if annotations is not None:
         if isinstance(annotations, str):
             annotations = [annotations] * n_ad
-        elif not isinstance(annotations, (tuple, list)) or len(annotations) != n_ad:
+        elif (
+            not isinstance(annotations, (tuple, list))
+            or len(annotations) != n_ad
+        ):
             raise ValueError("invalid `annotations` provided")
     if batches is not None:
         if isinstance(batches, str):
@@ -859,7 +1044,8 @@ def integrate(
                 ad_type = "raw_norm"
             elif (
                 sp.issparse(ad.X)
-                and np.abs(ad.X.data - ad.X.data.astype(int)).sum() < 1e-6 * ad.X.data.size
+                and np.abs(ad.X.data - ad.X.data.astype(int)).sum()
+                < 1e-6 * ad.X.data.size
             ):
                 ad_type = "counts"
             elif (
@@ -872,39 +1058,59 @@ def integrate(
             ):
                 ad_type = "norm"
             else:
-                raise ValueError(f"Cannot determine the type of anndata at position {i}")
+                raise ValueError(
+                    f"Cannot determine the type of anndata at position {i}"
+                )
             print(ad_type)
 
         if ad_type == "raw_norm":
-            norm_ad = anndata.AnnData(X=ad.raw.X, obs=ad.obs.copy(), var=ad.raw.var.copy())
+            norm_ad = anndata.AnnData(
+                X=ad.raw.X, obs=ad.obs.copy(), var=ad.raw.var.copy()
+            )
         elif ad_type == "norm":
             if not sp.issparse(ad.X):
                 norm_ad = anndata.AnnData(
                     X=sp.csr_matrix(ad.X), obs=ad.obs.copy(), var=ad.var.copy()
                 )
             else:
-                norm_ad = anndata.AnnData(X=ad.X, obs=ad.obs.copy(), var=ad.var.copy())
+                norm_ad = anndata.AnnData(
+                    X=ad.X, obs=ad.obs.copy(), var=ad.var.copy()
+                )
         else:
-            norm_ad = anndata.AnnData(X=ad.X, obs=ad.obs.copy(), var=ad.var.copy())
+            norm_ad = anndata.AnnData(
+                X=ad.X, obs=ad.obs.copy(), var=ad.var.copy()
+            )
             if normalize:
                 sc.pp.normalize_total(norm_ad, target_sum=1e4)
                 sc.pp.log1p(norm_ad)
 
         if normalize:
-            post_norm_count = np.expm1(norm_ad.X[0:10, :]).sum(axis=1).A1.mean().astype(int)
+            post_norm_count = (
+                np.expm1(norm_ad.X[0:10, :]).sum(axis=1).A1.mean().astype(int)
+            )
             if post_norm_count != 10000:
                 norm_ad.X = norm_ad.X / (post_norm_count / 1e4)
 
         prefix = ad_prefices[i]
-        if batches and batches[i] in norm_ad.obs.columns and batches[i] != "batch":
+        if (
+            batches
+            and batches[i] in norm_ad.obs.columns
+            and batches[i] != "batch"
+        ):
             if "batch" in norm_ad.obs.columns:
                 del norm_ad.obs["batch"]
             norm_ad.obs.rename(columns={batches[i]: "batch"}, inplace=True)
-        if annotations and annotations[i] in norm_ad.obs.columns and annotations[i] != "annot":
+        if (
+            annotations
+            and annotations[i] in norm_ad.obs.columns
+            and annotations[i] != "annot"
+        ):
             if "annot" in norm_ad.obs.columns:
                 del norm_ad.obs["annot"]
             norm_ad.obs.rename(columns={annotations[i]: "annot"}, inplace=True)
-            norm_ad.obs["annot"] = f"{prefix}_" + norm_ad.obs["annot"].astype(str)
+            norm_ad.obs["annot"] = f"{prefix}_" + norm_ad.obs["annot"].astype(
+                str
+            )
         norm_ads.append(norm_ad)
         del norm_ad
 
@@ -932,20 +1138,31 @@ def crossmap(adata, dataset="dataset", annotation="annot"):
     if datasets.size != 2:
         raise ValueError("Number of pooled datasets != 2")
     ds1, ds2 = datasets.to_list()
-    skip_prediction = f"{ds1}_annot" in adata.obs.columns and f"{ds2}_annot" in adata.obs.columns
+    skip_prediction = (
+        f"{ds1}_annot" in adata.obs.columns
+        and f"{ds2}_annot" in adata.obs.columns
+    )
     if not skip_prediction:
         ad1 = adata[adata.obs[dataset] == ds1].copy()
         ad2 = adata[adata.obs[dataset] == ds2].copy()
-        ad1.obs[annotation].cat.rename_categories(lambda x: x.replace(f"{ds1}_", ""), inplace=True)
-        ad2.obs[annotation].cat.rename_categories(lambda x: x.replace(f"{ds2}_", ""), inplace=True)
+        ad1.obs[annotation].cat.rename_categories(
+            lambda x: x.replace(f"{ds1}_", ""), inplace=True
+        )
+        ad2.obs[annotation].cat.rename_categories(
+            lambda x: x.replace(f"{ds2}_", ""), inplace=True
+        )
         lr1 = LR_train(ad1, annotation)
         lr2 = LR_train(ad2, annotation)
         LR_predict(adata, lr2, key_added=f"{ds2}_annot")
         LR_predict(adata, lr1, key_added=f"{ds1}_annot")
     df = pd.DataFrame(
         np.dot(
-            cross_table(adata, f"{ds1}_annot", annotation, normalise="yx").values,
-            cross_table(adata, annotation, f"{ds2}_annot", normalise="xy").values,
+            cross_table(
+                adata, f"{ds1}_annot", annotation, normalise="yx"
+            ).values,
+            cross_table(
+                adata, annotation, f"{ds2}_annot", normalise="xy"
+            ).values,
         ),
         index=adata.obs[f"{ds1}_annot"].cat.categories,
         columns=adata.obs[f"{ds2}_annot"].cat.categories,
