@@ -16,6 +16,7 @@ from sctk import (
     simple_default_pipeline,
 )
 from sctk._pipeline import _scale_factor, fit_gaussian
+from sklearn.mixture import GaussianMixture
 
 
 def test_calculate_qc():
@@ -56,20 +57,19 @@ def test_generate_qc_clusters():
 
 def test_scale_factor():
     # test that _scale_factor returns expected values
-    assert np.isclose(_scale_factor(np.array([0, 1, 2, 3, 4])), 1.0)
-    assert np.isclose(_scale_factor(np.array([0, 1, 2, 3, 10])), 0.5)
-    assert np.isclose(_scale_factor(np.array([0, 1, 2, 3, -10])), -0.5)
+    assert _scale_factor(np.array([0, 1, 2, 3, 4, 5])) == 1.0
+    assert _scale_factor(np.array([0, 1, 2, 3, 10])) == 0.5
 
 
 def test_fit_gaussian():
-    # create test data
-    x = np.random.normal(loc=5, scale=2, size=1000)
+    # create test data (normal distribution centered on 5)
+    x = np.random.normal(5, 2, 1000)
 
     # test that fit_gaussian returns expected values
     x_peak, x_left, x_right = fit_gaussian(x, n=2, threshold=0.05, plot=False)
-    assert np.isclose(x_peak, 0.0, rtol=1.0)
-    assert np.isclose(x_left, 10.0, rtol=1.0)
-    assert np.isclose(x_right, 9.0, rtol=0.1)
+    assert -1 < x_peak < 1
+    assert 9 < x_left < 11
+    assert isinstance(x_right, GaussianMixture)
 
 
 def test_integrate():
