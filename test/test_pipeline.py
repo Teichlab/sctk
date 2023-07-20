@@ -70,3 +70,37 @@ def test_fit_gaussian():
     assert np.isclose(x_peak, 0.0, rtol=1.0)
     assert np.isclose(x_left, 10.0, rtol=1.0)
     assert np.isclose(x_right, 9.0, rtol=0.1)
+
+
+def test_integrate():
+    # Load example datasets
+    adata1 = sc.datasets.pbmc68k_reduced()
+    adata2 = sc.datasets.pbmc3k()
+
+    # Integrate the datasets
+    ads = [adata1, adata2]
+    ad_prefices = ["pbmc68k", "pbmc3k"]
+    ad_types = ["counts", "counts"]
+    annotations = ["cell_type", "cell_type"]
+    batches = ["batch", "batch"]
+    integrated = integrate(
+        ads,
+        ad_prefices=ad_prefices,
+        ad_types=ad_types,
+        annotations=annotations,
+        batches=batches,
+        join="outer",
+        n_hvg=2000,
+        pool_only=False,
+        normalize=True,
+    )
+
+    # Check that the integrated object has the correct shape and annotations
+    assert integrated.shape == (
+        adata1.shape[0] + adata2.shape[0],
+        adata1.shape[1],
+    )
+    assert "batch" in integrated.obs.columns
+    assert "cell_type" in integrated.obs.columns
+    assert len(integrated.obs["batch"].unique()) == 2
+    assert len(integrated.obs["cell_type"].unique()) == 14
