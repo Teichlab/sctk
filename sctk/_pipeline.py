@@ -706,6 +706,8 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
         clusters. TODO explain threshold metric
 
         key_added: Key to use for storing the results in the AnnData obs object.
+        If provided, will be prepended to 'fqo2' with an underscore. Otherwise,
+        just 'fqo2' will be used.
 
     Returns:
         None.
