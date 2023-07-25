@@ -161,6 +161,95 @@ def test_find_good_qc_cluster():
     assert adata.obs["good_qc_clusters"].all()
 
 
+def test_get_good_sized_batch():
+    # Test default min_size
+    batches = pd.Series(
+        [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+        ],
+    )
+    good_batches = get_good_sized_batch(batches)
+    assert isinstance(good_batches, list)
+    assert len(good_batches) == 1
+
+    # Test custom min_size
+    good_batches = get_good_sized_batch(batches, min_size=5)
+    assert isinstance(good_batches, list)
+    assert len(good_batches) == 2
+
+
+def test_simple_default_pipeline():
+    pass
+
+
+def test_recluster_subset():
+    # Test with a small dataset
+    adata = sc.datasets.pbmc68k_reduced()
+    groupby = "louvain"
+    groups = ["0", "1"]
+    res = 0.5
+    new_key = "reclustered"
+    ad_aux = None
+    result = recluster_subset(adata, groupby, groups, res, new_key, ad_aux)
+    assert isinstance(result, sc.AnnData)
+    assert new_key in adata.obs.columns
+    assert result.obs[new_key].nunique() == len(groups)
+
+    # Test with a large dataset
+    adata = sc.datasets.pbmc3k()
+    groupby = "louvain"
+    groups = ["0", "1", "2"]
+    res = 0.6
+    new_key = "reclustered"
+    ad_aux = None
+    result = recluster_subset(adata, groupby, groups, res, new_key, ad_aux)
+    assert isinstance(result, sc.AnnData)
+    assert new_key in result.obs.columns
+    assert result.obs[new_key].nunique() == len(groups)
+
+    # Test with missing values
+    adata = sc.datasets.pbmc68k_reduced()
+    adata.X[0, 0] = np.nan
+    groupby = "louvain"
+    groups = ["0", "1"]
+    res = 0.5
+    new_key = "reclustered"
+    ad_aux = None
+    result = recluster_subset(adata, groupby, groups, res, new_key, ad_aux)
+    assert isinstance(result, sc.AnnData)
+    assert new_key in result.obs.columns
+    assert result.obs[new_key].nunique() == len(groups)
+    assert np.isnan(result.X[0, 0])
+
+
 def test_integrate():
     # Load example datasets
     adata1 = sc.datasets.pbmc68k_reduced()

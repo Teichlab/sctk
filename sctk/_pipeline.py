@@ -770,14 +770,6 @@ def get_good_sized_batch(batches, min_size=10) -> list:
 
     Raises:
         None.
-
-    Examples:
-        >>> import pandas as pd
-        >>> from my_module import get_good_sized_batch
-        >>> batches = pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name='batch_size')
-        >>> get_good_sized_batch(batches, min_size=5)
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-
     """
     x = batches.value_counts()
     return x.index[x >= min_size].to_list()
