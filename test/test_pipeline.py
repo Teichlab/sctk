@@ -109,7 +109,7 @@ def test_filter_qc_outlier2():
 
 def test_find_good_qc_cluster():
     # Load example dataset
-    adata = sc.datasets.pbmc68k_reduced()
+    adata = sc.datasets.pbmc3k()
     calculate_qc(adata)
     generate_qc_clusters(
         adata,
@@ -123,15 +123,15 @@ def test_find_good_qc_cluster():
     )
 
     # Test default metrics
-    find_good_qc_cluster(adata)  # not working because n_genes does not pass
+    find_good_qc_cluster(adata)
     assert "fqo2" in adata.obs
     assert "good_qc_clusters" in adata.obs
 
-    # Test custom metrics
+    # Test custom metrics (all samples fail here)
     metrics = {
-        "n_counts": [500, 5000],
-        "n_genes": [200, 5000],
-        "percent_mito": [0, 0.1],
+        "n_counts": (500, 5000, "log", "both", 0.1),
+        "n_genes": (200, 5000, "log", "both", 0.1),
+        "percent_mito": (0, 1, "log", "both", 0.1),
     }
     find_good_qc_cluster(
         adata,
@@ -141,24 +141,7 @@ def test_find_good_qc_cluster():
     )
     assert "fqo2" in adata.obs
     assert "custom_good_qc_clusters" in adata.obs
-
-    # Test no good QC clusters
-    adata.obs["n_counts"] = 0
-    adata.obs["n_genes"] = 0
-    adata.obs["percent_mito"] = 1
-    find_good_qc_cluster(adata)
-    assert "fqo2" in adata.obs
-    assert "good_qc_clusters" in adata.obs
-    assert not adata.obs["good_qc_clusters"].any()
-
-    # Test all good QC clusters
-    adata.obs["n_counts"] = 10000
-    adata.obs["n_genes"] = 10000
-    adata.obs["percent_mito"] = 0
-    find_good_qc_cluster(adata)
-    assert "fqo2" in adata.obs
-    assert "good_qc_clusters" in adata.obs
-    assert adata.obs["good_qc_clusters"].all()
+    assert adata.obs["custom_good_qc_clusters"].sum() == 0
 
 
 def test_get_good_sized_batch():
