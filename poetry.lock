@@ -110,6 +110,20 @@ python-versions = ">=3.8"
 numpy = ">=1.17.3"
 
 [[package]]
+name = "harmonypy"
+version = "0.0.9"
+description = "A data integration algorithm."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+numpy = "*"
+pandas = "*"
+scikit-learn = "*"
+scipy = "*"
+
+[[package]]
 name = "igraph"
 version = "0.10.6"
 description = "High performance graph data structures and algorithms"
@@ -701,7 +715,7 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "12957780e3f56b895eb28a32338ae47ab9ca574089060aa51b8c29b8e8112e79"
+content-hash = "11e400d8a9b4c5316616ffaf3416fd901b4074dd9cf869945dc2d0a26d3a5326"
 
 [metadata.files]
 adjusttext = [
@@ -823,6 +837,10 @@ h5py = [
     {file = "h5py-3.9.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:95f7a745efd0d56076999b52e8da5fad5d30823bac98b59c68ae75588d09991a"},
     {file = "h5py-3.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:79bbca34696c6f9eeeb36a91776070c49a060b2879828e2c8fa6c58b8ed10dd1"},
     {file = "h5py-3.9.0.tar.gz", hash = "sha256:e604db6521c1e367c6bd7fad239c847f53cc46646f2d2651372d05ae5e95f817"},
+]
+harmonypy = [
+    {file = "harmonypy-0.0.9-py3-none-any.whl", hash = "sha256:bc75fc47a8a426e93d4fae820dae7e464e4ef2a9f11f524157fe299a07565878"},
+    {file = "harmonypy-0.0.9.tar.gz", hash = "sha256:85bfdd4e6ec6e0fa8816a276639358d3598a40d60ba9f7a5d9dada8706be8c4d"},
 ]
 igraph = [
     {file = "igraph-0.10.6-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:eca5d01773a8b48bb585fb972c8afcf0cbfb791627a6706ccf56c0685b8ccca7"},

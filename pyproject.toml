@@ -15,6 +15,7 @@ scanpy = "^1.9.3"
 leidenalg = "^0.10.0"
 adjustText = "^0.8"
 numpy-groupies = "^0.9.22"
+harmonypy = "^0.0.9"
 
 
 [tool.poetry.group.dev.dependencies]
