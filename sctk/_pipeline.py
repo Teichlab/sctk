@@ -742,7 +742,7 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
                 ad.obs[key_fqo2].astype("category"),
                 normalize="index",
             )
-            .where(lambda x: x[1] >= threshold)
+            .where(lambda x: x[True] >= threshold)
             .dropna()
             .index.tolist()
         )
