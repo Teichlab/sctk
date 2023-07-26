@@ -177,17 +177,11 @@ def generate_qc_clusters(
     Raises:
         None.
 
-    Examples: # TODO does not work (too many PCs)
-        >>> import anndata
-        >>> import pandas as pd
+    Examples:
         >>> import scanpy as sc
         >>> from sctk import generate_qc_clusters
-        >>> adata = anndata.AnnData(
-        ...     X=np.random.rand(100, 100),
-        ...     obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
-        ...     var=pd.DataFrame(index=[f"gene{i}" for i in range(100)]),
-        ... )
-        >>> generate_qc_clusters(adata, ["n_counts", "n_genes"])
+        >>> adata = sc.datasets.pbmc68k_reduced()
+        >>> generate_qc_clusters(adata, ["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb"])
 
     """
     if aux_ad is None:
