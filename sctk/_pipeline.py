@@ -83,7 +83,7 @@ def calculate_qc(
         >>> import numpy as np
         >>> import pandas as pd
         >>> import scanpy as sc
-        >>> from my_module import calculate_qc
+        >>> from sctk import calculate_qc
         >>> adata = anndata.AnnData(
         ...     X=np.random.rand(100, 100),
         ...     obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
@@ -188,7 +188,7 @@ def generate_qc_clusters(
         >>> import anndata
         >>> import pandas as pd
         >>> import scanpy as sc
-        >>> from my_module import generate_qc_clusters
+        >>> from sctk import generate_qc_clusters
         >>> adata = anndata.AnnData(
         ...     X=np.random.rand(100, 100),
         ...     obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
@@ -295,7 +295,7 @@ def fit_gaussian(
 
     Examples:
         >>> import numpy as np
-        >>> from my_module import fit_gaussian
+        >>> from sctk import fit_gaussian
         >>> x = np.random.normal(loc=0, scale=1, size=1000)
         >>> x_left, x_right, gmm = fit_gaussian(x, n=2, threshold=0.1)
 
@@ -717,7 +717,7 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
 
     Examples:
         >>> import anndata
-        >>> from my_module import find_good_qc_cluster
+        >>> from sctk import find_good_qc_cluster
         >>> adata = anndata.read_h5ad("my_data.h5ad")
         >>> metrics = {"n_counts": [500, 5000], "n_genes": [200, 5000], "percent_mito": [0, 0.1]}
         >>> find_good_qc_cluster(adata, metrics=metrics, threshold=0.6, key_added="good_qc_clusters")
