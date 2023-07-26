@@ -190,7 +190,7 @@ def test_get_good_sized_batch():
 
 
 def test_simple_default_pipeline():
-    pass
+    assert False
 
 
 def test_recluster_subset():
