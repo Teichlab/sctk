@@ -79,16 +79,9 @@ def calculate_qc(
         None.
 
     Examples:
-        >>> import anndata
-        >>> import numpy as np
-        >>> import pandas as pd
         >>> import scanpy as sc
         >>> from sctk import calculate_qc
-        >>> adata = anndata.AnnData(
-        ...     X=np.random.rand(100, 100),
-        ...     obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
-        ...     var=pd.DataFrame(index=[f"gene{i}" for i in range(100)]),
-        ... )
+        >>> adata = sc.datasets.pbmc68k_reduced()
         >>> calculate_qc(adata)
 
     """

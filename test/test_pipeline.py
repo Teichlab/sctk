@@ -21,11 +21,7 @@ from sklearn.mixture import GaussianMixture
 
 def test_calculate_qc():
     # create test data
-    adata = anndata.AnnData(
-        X=np.random.rand(100, 100),
-        obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
-        var=pd.DataFrame(index=[f"gene{i}" for i in range(100)]),
-    )
+    adata = sc.datasets.pbmc68k_reduced()
 
     # test that calculate_qc adds expected columns to adata.obs and adata.var
     calculate_qc(adata)
