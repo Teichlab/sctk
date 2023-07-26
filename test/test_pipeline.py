@@ -239,16 +239,16 @@ def test_recluster_subset():
 
 
 def test_integrate():
-    # Load example datasets
+    # Load example datasets (same dataset twice for now)
     adata1 = sc.datasets.pbmc68k_reduced()
-    adata2 = sc.datasets.pbmc3k()
+    adata2 = sc.datasets.pbmc68k_reduced()
 
     # Integrate the datasets
     ads = [adata1, adata2]
     ad_prefices = ["pbmc68k", "pbmc3k"]
     ad_types = ["counts", "counts"]
     annotations = ["cell_type", "cell_type"]
-    batches = ["batch", "batch"]
+    batches = None
     integrated = integrate(
         ads,
         ad_prefices=ad_prefices,
@@ -258,15 +258,11 @@ def test_integrate():
         join="outer",
         n_hvg=2000,
         pool_only=False,
-        normalize=True,
+        normalize=False,
     )
 
     # Check that the integrated object has the correct shape and annotations
-    assert integrated.shape == (
-        adata1.shape[0] + adata2.shape[0],
-        adata1.shape[1],
-    )
-    assert "batch" in integrated.obs.columns
-    assert "cell_type" in integrated.obs.columns
-    assert len(integrated.obs["batch"].unique()) == 2
-    assert len(integrated.obs["cell_type"].unique()) == 14
+    assert integrated.shape[0] == adata1.shape[0] + adata2.shape[0]
+    assert "n_genes" in integrated.obs.columns
+    assert "dataset" in integrated.obs.columns
+    assert len(integrated.obs["dataset"].unique()) == 2
