@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='sctk',
-    version='0.1.0',
+    version='0.1.1',
     author='nh3',
     author_email='nh3@users.noreply.github.com',
     description='single cell analysis tool kit based on scanpy',
