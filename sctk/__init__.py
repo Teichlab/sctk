@@ -100,6 +100,7 @@ from ._pipeline import (
     calculate_qc,
     crossmap,
     custom_pipeline,
+    filter_qc_outlier,
     find_good_qc_cluster,
     generate_qc_clusters,
     get_good_sized_batch,

@@ -354,18 +354,16 @@ def fit_gaussian(
     return x_left, x_right, gmm
 
 
-def filter_qc_outlier2(adata, metrics=None, force=False):
+def filter_qc_outlier(adata, metrics=None, force=False, threshold=0.05, fqo_key="fqo", **kwargs):
     """
-    Filter cells in an AnnData object based on quality control metrics.
+    Filter cells in an AnnData object based on quality control metrics. The 
+    object is modified in place.
 
     This function filters cells in an AnnData object based on quality control
     metrics. The metrics used for filtering can be specified using the `metrics`
     argument. By default, the function uses a set of default metrics, but these
     can be overridden by passing a list/tuple of metric names or a dictionary of
     metric names and their corresponding parameters.
-
-    TODO this seems like a refactored version of `filter_qc_outlier`. true? can
-    we remove `filter_qc_outlier`?
 
     Args:
         adata: AnnData object to filter cells from.
@@ -377,9 +375,13 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
         force: If True, force all cells to pass the quality control filter, even
         if they do not meet the minimum pass rate for a given metric.
 
+        fqo_key: Obs column in the object to store the per-cell QC calls in.
+        
+        **kwargs: Additional keyword arguments to pass to the
+        *`fit_gaussian` function.
+
     Returns:
-        Boolean numpy array indicating which cells passed the quality control
-        filter.
+        None.
 
     Raises:
         ValueError: If `metrics` is not a list/tuple of metric names or a
@@ -387,8 +389,9 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
 
     Examples:
         >>> import scanpy as sc
+        >>> from sctk impport filter_qc_outlier
         >>> adata = sc.datasets.pbmc68k_reduced()
-        >>> adata = filter_qc_outlier2(adata, metrics=["n_counts", "percent_mito"])
+        >>> filter_qc_outlier(adata, metrics=["n_counts", "percent_mito"])
     """
     default_metric_params = {
         "n_counts": (1000, None, "log", "min_only", 0.1),
@@ -429,7 +432,7 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
             min_x = np.log1p(min_x) if min_x is not None else None
             max_x = np.log1p(max_x) if max_x is not None else None
         try:
-            x_low, x_high, _ = fit_gaussian(x, xmin=min_x, xmax=max_x)
+            x_low, x_high, _ = fit_gaussian(x, xmin=min_x, xmax=max_x, **kwargs)
         except ValueError:
             x_low = min_x if min_x is not None else x.min()
             x_high = max_x if max_x is not None else x.max()
@@ -462,10 +465,17 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
     for m, k_pass in pass_filter.items():
         all_passed = all_passed & k_pass
     print(f"{all_passed.sum()}/{n_obs} pass")
-    return all_passed
+    adata.obs[fqo_key] = all_passed
+    if adata.obs[fqo_key].sum() == 0:
+        print("No cells passed. Performing simple filtering on counts, genes and mito%")
+        adata.obs[fqo_key] = (
+            (adata.obs.n_counts >= metrics["n_counts"][0])
+            & (adata.obs.n_genes >= metrics["n_genes"][0])
+            & (adata.obs.percent_mito < metrics["percent_mito"][1])
+        )
 
 
-def filter_qc_outlier(
+def filter_qc_outlier_legacy(
     adata,
     metrics=[
         "n_counts",
@@ -544,7 +554,7 @@ def filter_qc_outlier(
         >>> sc.pp.pca(adata, n_comps=50, use_highly_variable=True)
         >>> sc.pp.neighbors(adata, n_neighbors=10, n_pcs=50)
         >>> sc.tl.umap(adata)
-        >>> k_pass = filter_qc_outlier(adata)
+        >>> k_pass = filter_qc_outlier_legacy(adata)
     """
     k_pass = np.ones(adata.n_obs).astype(bool)
 
@@ -674,23 +684,22 @@ def filter_qc_outlier(
     return k_pass
 
 
-def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
+def find_good_qc_cluster(ad, threshold=0.5, fqo_key="fqo", key_added="good_qc_clusters") -> None:
     """
     Find good quality control (QC) clusters in an AnnData object.
 
     This function finds good quality control (QC) clusters in an AnnData object
-    by filtering out cells that do not meet the specified QC metrics and then
-    identifying clusters that have a high proportion of cells that pass the QC
-    filter.
+    by identifying clusters that have a high proportion of cells that pass the 
+    QC filter.
 
     Args:
         ad: AnnData object to find good QC clusters in.
 
-        metrics: Dictionary of QC metrics and their corresponding parameters. If
-        not provided, default QC metrics will be used.
-
         threshold: Threshold value for determining which clusters are good QC
         clusters. TODO explain threshold metric
+
+        fqo_key: Key to use to retrieve per-cell QC calls from obs in the 
+        AnnData.
 
         key_added: Key to use for storing the results in the AnnData obs object.
         If provided, will be prepended to 'fqo2' with an underscore. Otherwise,
@@ -710,23 +719,13 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
         >>> find_good_qc_cluster(adata, metrics=metrics, threshold=0.6, key_added="good_qc_clusters")
 
     """
-    key_fqo2 = key_added + ("_" if key_added else "") + "fqo2"
-    ad.obs[key_fqo2] = filter_qc_outlier2(ad, metrics=metrics)
-
-    if ad.obs[key_fqo2].sum() == 0:
-        ad.obs[key_fqo2] = (
-            (ad.obs.n_counts >= metrics["n_counts"][0])
-            & (ad.obs.n_genes >= metrics["n_genes"][0])
-            & (ad.obs.percent_mito < metrics["percent_mito"][1])
-        )
-
-    if ad.obs[key_fqo2].astype(bool).sum() == 0:
+    if ad.obs[fqo_key].astype(bool).sum() == 0:
         good_qc_clusters = []
     else:
         good_qc_clusters = (
             pd.crosstab(
                 ad.obs.qc_cluster,
-                ad.obs[key_fqo2].astype("category"),
+                ad.obs[fqo_key].astype("category"),
                 normalize="index",
             )
             .where(lambda x: x[True] >= threshold)
@@ -734,7 +733,6 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
             .index.tolist()
         )
 
-    key_added = key_added if key_added else "good_qc_clusters"
     ad.obs[key_added] = ad.obs["qc_cluster"].isin(good_qc_clusters)
 
 
