@@ -354,7 +354,7 @@ def fit_gaussian(
     return x_left, x_right, gmm
 
 
-def filter_qc_outlier(adata, metrics=None, force=False, threshold=0.05, fqo_key="fqo", **kwargs):
+def filter_qc_outlier(adata, metrics=None, force=False, fqo_key="fqo", **kwargs):
     """
     Filter cells in an AnnData object based on quality control metrics. The 
     object is modified in place.
