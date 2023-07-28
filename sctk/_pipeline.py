@@ -237,7 +237,7 @@ def _scale_factor(x):
 
 def fit_gaussian(
     x,
-    n=10,
+    n_components=np.arange(10)+1,
     threshold=0.05,
     xmin=None,
     xmax=None,
@@ -256,7 +256,8 @@ def fit_gaussian(
     Args:
         x: 1D numpy array to fit a Gaussian mixture model to.
 
-        n: Number of components to use for the Gaussian mixture model.
+        n_components: Number of components to use for the Gaussian mixture model.
+        The best GMM will be selected based on BIC.
 
         threshold: Threshold value for determining the lower and upper bounds of
         the fitted Gaussian distribution.
@@ -289,13 +290,30 @@ def fit_gaussian(
     """
     xmin = x.min() if xmin is None else xmin
     xmax = x.max() if xmax is None else xmax
-    gmm = GaussianMixture(n_components=n, random_state=0)
     x_fit = x[(x >= xmin) & (x <= xmax)]
     f = _scale_factor(x_fit)
-    x_fit = x_fit * f
-    gmm.fit(x_fit.reshape(-1, 1))
-    while not gmm.converged_:
-        gmm.fit(x_fit.reshape(-1, 1), warm_start=True)
+    x_fit = (x_fit * f).reshape(-1, 1)
+    #try a bunch of different component counts for the GMM
+    gmms = []
+    bics = []
+    for n in n_components:
+        gmm = GaussianMixture(n_components=n, random_state=0)
+        gmm.fit(x_fit)
+        while not gmm.converged_:
+            gmm.fit(x_fit, warm_start=True)
+        gmms.append(gmm)
+        bics.append(gmm.bic(x_fit))
+    #pick best one based on BIC (the lower the better)
+    #making this plot is useless if there's a single component count
+    if plot and len(n_components)>1:
+        plt.plot(n_components, bics)
+        plt.xlabel("GMM components")
+        plt.ylabel("BIC")
+        plt.show()
+    #the minimum bic's index is the position in n_components
+    #as well as the gmm list
+    n = n_components[np.argmin(bics)]
+    gmm = gmms[np.argmin(bics)]
     x0 = np.linspace(x.min(), x.max(), num=nbins)
     y_pdf = np.zeros((n, nbins))
     y_cdf = np.zeros((n, nbins))
@@ -354,7 +372,7 @@ def fit_gaussian(
     return x_left, x_right, gmm
 
 
-def filter_qc_outlier(adata, metrics=None, force=False, fqo_key="fqo", **kwargs):
+def filter_qc_outlier(adata, metrics=None, force=False, threshold=0.05, fqo_key="fqo", **kwargs):
     """
     Filter cells in an AnnData object based on quality control metrics. The 
     object is modified in place.
