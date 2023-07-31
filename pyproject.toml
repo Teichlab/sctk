@@ -21,6 +21,7 @@ harmonypy = "^0.0.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
+ipykernel = "^6.25.0"
 
 [build-system]
 requires = ["poetry-core"]
