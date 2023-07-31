@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "sctk"
+version = "0.2.0"
+description = "single cell analysis tool kit based on scanpy"
+authors = [
+    "nh3 <nh3@users.noreply.github.com>", 
+    "Sebastian Lobentanzer <sebastian.lobentanzer@uni-heidelberg.de>",
+    "Krzysztof Polanski <kp9@sanger.ac.uk>",
+]
+license = "GPL-3.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+scanpy = "^1.9.3"
+leidenalg = "^0.10.0"
+adjustText = "^0.8"
+numpy-groupies = "^0.9.22"
+harmonypy = "^0.0.9"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+ipykernel = "^6.25.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
