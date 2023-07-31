@@ -1,3 +1,4 @@
+![![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![CI](https://github.com/slobentanzer/sctk/actions/workflows/ci-cd.yaml/badge.svg)
 ![Coverage](coverage.svg)
 
