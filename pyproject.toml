@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sctk"
-version = "0.2.1"
+version = "0.2.0"
 description = "single cell analysis tool kit based on scanpy"
 authors = [
     "nh3 <nh3@users.noreply.github.com>", 
