@@ -41,6 +41,10 @@ from ._markers import calc_marker_stats, filter_marker_stats
 
 
 class QcLowPassError(ValueError):
+    """
+    Error raised when a QC minimum requirements are not met for a dataset.
+    """
+
     pass
 
 
@@ -65,7 +69,7 @@ def calculate_qc(
             metrics.
         suffix: Suffix to append to QC metric names.
         **kwargs: Additional keyword arguments to pass to
-            *`scanpy.pp.calculate_qc_metrics`.
+            :py:func:`scanpy.pp.calculate_qc_metrics`.
 
     Returns:
         None.
@@ -378,7 +382,7 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
             refer to the QC workflow demo notebook.
         cell_qc_key: Obs column in the object to store the per-cell QC calls in.
         **kwargs: Additional keyword arguments to pass to the
-            *`fit_gaussian` function.
+            :py:func:`fit_gaussian` function.
 
     Returns:
         None.
@@ -1042,7 +1046,7 @@ def recluster_subset(
             object.
         ad_aux: Optional preprocessed AnnData object to use for clustering.
         **kwargs: Additional keyword arguments to pass to the
-            *`simple_default_pipeline` function.
+            :py:func:`simple_default_pipeline` function.
 
     Returns:
         If `ad_aux` is not provided, the preprocessed AnnData object used for
@@ -1679,8 +1683,8 @@ def auto_filter_cells(
         subset (bool): Whether to return a subset of the original AnnData object
             containing only the passing cells. Default is True.
         filter_kw (dict): Dictionary of keyword arguments to pass to the
-            `simple_default_pipeline` function. Default is a set of default filter
-            parameters.
+            :py:func:`simple_default_pipeline` function. Default is a set of
+            default filter parameters.
 
     Returns:
         If `subset` is True, a new AnnData object containing only the passing
