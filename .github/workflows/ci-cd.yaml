@@ -35,9 +35,9 @@ jobs:
       run: coverage-badge -f -o coverage.svg
 
     - name: Check if there are any changes
-        id: verify_diff
-        run: |
-          git diff --quiet . || echo "changed=true" >> $GITHUB_OUTPUT
+      id: verify_diff
+      run: |
+        git diff --quiet . || echo "changed=true" >> $GITHUB_OUTPUT
 
     - name: Commit changes
       if: steps.verify_diff.outputs.changed == 'true'
