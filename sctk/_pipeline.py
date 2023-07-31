@@ -79,17 +79,10 @@ def calculate_qc(
         None.
 
     Examples:
-        >>> import anndata
-        >>> import numpy as np
-        >>> import pandas as pd
         >>> import scanpy as sc
-        >>> from my_module import calculate_qc
-        >>> adata = anndata.AnnData(
-        ...     X=np.random.rand(100, 100),
-        ...     obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
-        ...     var=pd.DataFrame(index=[f"gene{i}" for i in range(100)]),
-        ... )
-        >>> calculate_qc(adata)
+        >>> import sctk
+        >>> adata = sc.datasets.pbmc3k()
+        >>> sctk.calculate_qc(adata)
 
     """
     if extra_flags:
@@ -160,10 +153,13 @@ def generate_qc_clusters(
     Args:
         ad: AnnData object to generate QC clusters for.
 
-        metrics: List of QC metrics to use for generating QC clusters.
+        metrics: List of QC metrics to use for generating QC clusters. Must be 
+        present as obs columns.
 
         aux_ad: Optional auxiliary AnnData object to use for generating QC
-        clusters.
+        clusters, created by an earlier call of this function and returned if 
+        return_aux is set to True. Its neighbour graph will be used for 
+        clustering and its UMAP will be transferred to the input object.
 
         n_pcs: Number of principal components to use for PCA. If not provided,
         this will be set to max(2, len(metrics) - 2).
@@ -184,17 +180,13 @@ def generate_qc_clusters(
     Raises:
         None.
 
-    Examples: # TODO does not work (too many PCs)
-        >>> import anndata
-        >>> import pandas as pd
+    Examples:
         >>> import scanpy as sc
-        >>> from my_module import generate_qc_clusters
-        >>> adata = anndata.AnnData(
-        ...     X=np.random.rand(100, 100),
-        ...     obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
-        ...     var=pd.DataFrame(index=[f"gene{i}" for i in range(100)]),
-        ... )
-        >>> generate_qc_clusters(adata, ["n_counts", "n_genes"])
+        >>> import sctk
+        >>> adata = sc.datasets.pbmc3k()
+        >>> sctk.calculate_qc(adata)
+        >>> metrics_list = ["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb"]
+        >>> sctk.generate_qc_clusters(adata, metrics=metrics_list)
 
     """
     if aux_ad is None:
@@ -250,7 +242,7 @@ def _scale_factor(x):
 
 def fit_gaussian(
     x,
-    n=10,
+    n_components=np.arange(10)+1,
     threshold=0.05,
     xmin=None,
     xmax=None,
@@ -269,7 +261,8 @@ def fit_gaussian(
     Args:
         x: 1D numpy array to fit a Gaussian mixture model to.
 
-        n: Number of components to use for the Gaussian mixture model.
+        n_components: Number of components to use for the Gaussian mixture model.
+        The best GMM will be selected based on BIC.
 
         threshold: Threshold value for determining the lower and upper bounds of
         the fitted Gaussian distribution.
@@ -295,20 +288,37 @@ def fit_gaussian(
 
     Examples:
         >>> import numpy as np
-        >>> from my_module import fit_gaussian
+        >>> from sctk import fit_gaussian
         >>> x = np.random.normal(loc=0, scale=1, size=1000)
-        >>> x_left, x_right, gmm = fit_gaussian(x, n=2, threshold=0.1)
+        >>> x_left, x_right, gmm = fit_gaussian(x, n_components=[2], threshold=0.1)
 
     """
     xmin = x.min() if xmin is None else xmin
     xmax = x.max() if xmax is None else xmax
-    gmm = GaussianMixture(n_components=n, random_state=0)
     x_fit = x[(x >= xmin) & (x <= xmax)]
     f = _scale_factor(x_fit)
-    x_fit = x_fit * f
-    gmm.fit(x_fit.reshape(-1, 1))
-    while not gmm.converged_:
-        gmm.fit(x_fit.reshape(-1, 1), warm_start=True)
+    x_fit = (x_fit * f).reshape(-1, 1)
+    #try a bunch of different component counts for the GMM
+    gmms = []
+    bics = []
+    for n in n_components:
+        gmm = GaussianMixture(n_components=n, random_state=0)
+        gmm.fit(x_fit)
+        while not gmm.converged_:
+            gmm.fit(x_fit, warm_start=True)
+        gmms.append(gmm)
+        bics.append(gmm.bic(x_fit))
+    #pick best one based on BIC (the lower the better)
+    #making this plot is useless if there's a single component count
+    if plot and len(n_components)>1:
+        plt.plot(n_components, bics)
+        plt.xlabel("GMM components")
+        plt.ylabel("BIC")
+        plt.show()
+    #the minimum bic's index is the position in n_components
+    #as well as the gmm list
+    n = n_components[np.argmin(bics)]
+    gmm = gmms[np.argmin(bics)]
     x0 = np.linspace(x.min(), x.max(), num=nbins)
     y_pdf = np.zeros((n, nbins))
     y_cdf = np.zeros((n, nbins))
@@ -367,9 +377,10 @@ def fit_gaussian(
     return x_left, x_right, gmm
 
 
-def filter_qc_outlier2(adata, metrics=None, force=False):
+def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
     """
-    Filter cells in an AnnData object based on quality control metrics.
+    Filter cells in an AnnData object based on quality control metrics. The 
+    object is modified in-place.
 
     This function filters cells in an AnnData object based on quality control
     metrics. The metrics used for filtering can be specified using the `metrics`
@@ -377,22 +388,21 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
     can be overridden by passing a list/tuple of metric names or a dictionary of
     metric names and their corresponding parameters.
 
-    TODO this seems like a refactored version of `filter_qc_outlier`. true? can
-    we remove `filter_qc_outlier`?
-
     Args:
         adata: AnnData object to filter cells from.
 
         metrics: Optional list/tuple of metric names or dictionary of metric
         names and their corresponding parameters. If not provided, the function
-        uses a set of default metrics.
+        uses a set of default metrics. For defaults and an explanation, please 
+        refer to the QC workflow demo notebook.
 
-        force: If True, force all cells to pass the quality control filter, even
-        if they do not meet the minimum pass rate for a given metric.
+        cell_qc_key: Obs column in the object to store the per-cell QC calls in.
+        
+        **kwargs: Additional keyword arguments to pass to the
+        *`fit_gaussian` function.
 
     Returns:
-        Boolean numpy array indicating which cells passed the quality control
-        filter.
+        None.
 
     Raises:
         ValueError: If `metrics` is not a list/tuple of metric names or a
@@ -400,8 +410,10 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
 
     Examples:
         >>> import scanpy as sc
-        >>> adata = sc.datasets.pbmc68k_reduced()
-        >>> adata = filter_qc_outlier2(adata, metrics=["n_counts", "percent_mito"])
+        >>> import sctk
+        >>> adata = sc.datasets.pbmc3k()
+        >>> sctk.calculate_qc(adata)
+        >>> sctk.cellwise_qc(adata)
     """
     default_metric_params = {
         "n_counts": (1000, None, "log", "min_only", 0.1),
@@ -442,7 +454,7 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
             min_x = np.log1p(min_x) if min_x is not None else None
             max_x = np.log1p(max_x) if max_x is not None else None
         try:
-            x_low, x_high, _ = fit_gaussian(x, xmin=min_x, xmax=max_x)
+            x_low, x_high, _ = fit_gaussian(x, xmin=min_x, xmax=max_x, **kwargs)
         except ValueError:
             x_low = min_x if min_x is not None else x.min()
             x_high = max_x if max_x is not None else x.max()
@@ -453,7 +465,7 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
         else:
             pass
         m_pass = (x_low <= x) & (x <= x_high)
-        if m_pass.sum() < n_obs * min_pass_rate and not force:
+        if m_pass.sum() < n_obs * min_pass_rate:
             if side == "min_only":
                 x_low = min_x
                 m_pass = min_x <= x
@@ -475,10 +487,17 @@ def filter_qc_outlier2(adata, metrics=None, force=False):
     for m, k_pass in pass_filter.items():
         all_passed = all_passed & k_pass
     print(f"{all_passed.sum()}/{n_obs} pass")
-    return all_passed
+    adata.obs[cell_qc_key] = all_passed
+    if adata.obs[cell_qc_key].sum() == 0:
+        print("No cells passed. Performing simple filtering on counts, genes and mito%")
+        adata.obs[cell_qc_key] = (
+            (adata.obs.n_counts >= metrics["n_counts"][0])
+            & (adata.obs.n_genes >= metrics["n_genes"][0])
+            & (adata.obs.percent_mito < metrics["percent_mito"][1])
+        )
 
 
-def filter_qc_outlier(
+def filter_qc_outlier_legacy(
     adata,
     metrics=[
         "n_counts",
@@ -557,7 +576,7 @@ def filter_qc_outlier(
         >>> sc.pp.pca(adata, n_comps=50, use_highly_variable=True)
         >>> sc.pp.neighbors(adata, n_neighbors=10, n_pcs=50)
         >>> sc.tl.umap(adata)
-        >>> k_pass = filter_qc_outlier(adata)
+        >>> k_pass = filter_qc_outlier_legacy(adata)
     """
     k_pass = np.ones(adata.n_obs).astype(bool)
 
@@ -668,7 +687,7 @@ def filter_qc_outlier(
     if "scrublet_score_z" in metrics:
         x_low, x_high, _ = fit_gaussian(
             adata.obs["scrublet_score_z"].values,
-            n=10,
+            n_components=[10],
             xmin=-99,
             xmax=10,
             threshold=0.05,
@@ -687,27 +706,25 @@ def filter_qc_outlier(
     return k_pass
 
 
-def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
+def clusterwise_qc(ad, threshold=0.5, cell_qc_key="cell_passed_qc", key_added="cluster_passed_qc") -> None:
     """
     Find good quality control (QC) clusters in an AnnData object.
 
     This function finds good quality control (QC) clusters in an AnnData object
-    by filtering out cells that do not meet the specified QC metrics and then
-    identifying clusters that have a high proportion of cells that pass the QC
-    filter.
+    by identifying clusters that have a high proportion of cells that pass the 
+    QC filter.
 
     Args:
-        ad: AnnData object to find good QC clusters in.
+        ad: AnnData object to find good QC clusters in. Needs qc_cluster 
+        present in obs.
 
-        metrics: Dictionary of QC metrics and their corresponding parameters. If
-        not provided, default QC metrics will be used.
+        threshold: Clusters featuring at least this fraction of good QC cells 
+        will be deemed good QC clusters.
 
-        threshold: Threshold value for determining which clusters are good QC
-        clusters. TODO explain threshold metric
+        cell_qc_key: Key to use to retrieve per-cell QC calls from obs in the 
+        AnnData.
 
         key_added: Key to use for storing the results in the AnnData obs object.
-        If provided, will be prepended to 'fqo2' with an underscore. Otherwise,
-        just 'fqo2' will be used.
 
     Returns:
         None.
@@ -716,30 +733,23 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
         None.
 
     Examples:
-        >>> import anndata
-        >>> from my_module import find_good_qc_cluster
-        >>> adata = anndata.read_h5ad("my_data.h5ad")
-        >>> metrics = {"n_counts": [500, 5000], "n_genes": [200, 5000], "percent_mito": [0, 0.1]}
-        >>> find_good_qc_cluster(adata, metrics=metrics, threshold=0.6, key_added="good_qc_clusters")
+        >>> import scanpy as sc
+        >>> import sctk
+        >>> adata = sc.datasets.pbmc3k()
+        >>> sctk.calculate_qc(adata)
+        >>> metrics_list = ["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb"]
+        >>> sctk.generate_qc_clusters(adata, metrics=metrics_list)
+        >>> sctk.cellwise_qc(adata)
+        >>> sctk.clusterwise_wc(adata)
 
     """
-    key_fqo2 = key_added + ("_" if key_added else "") + "fqo2"
-    ad.obs[key_fqo2] = filter_qc_outlier2(ad, metrics=metrics)
-
-    if ad.obs[key_fqo2].sum() == 0:
-        ad.obs[key_fqo2] = (
-            (ad.obs.n_counts >= metrics["n_counts"][0])
-            & (ad.obs.n_genes >= metrics["n_genes"][0])
-            & (ad.obs.percent_mito < metrics["percent_mito"][1])
-        )
-
-    if ad.obs[key_fqo2].astype(bool).sum() == 0:
+    if ad.obs[cell_qc_key].astype(bool).sum() == 0:
         good_qc_clusters = []
     else:
         good_qc_clusters = (
             pd.crosstab(
                 ad.obs.qc_cluster,
-                ad.obs[key_fqo2].astype("category"),
+                ad.obs[cell_qc_key].astype("category"),
                 normalize="index",
             )
             .where(lambda x: x[True] >= threshold)
@@ -747,7 +757,6 @@ def find_good_qc_cluster(ad, metrics=None, threshold=0.5, key_added="") -> None:
             .index.tolist()
         )
 
-    key_added = key_added if key_added else "good_qc_clusters"
     ad.obs[key_added] = ad.obs["qc_cluster"].isin(good_qc_clusters)
 
 
@@ -866,7 +875,7 @@ def simple_default_pipeline(
         PCA. If None, uses the default Seurat v3 HVG selection.
 
         filter_kw: Additional keyword arguments to pass to the
-        `filter_qc_outlier` function.
+        `filter_qc_outlier_legacy` function.
 
         hvg_kw: Additional keyword arguments to pass to the `hvg` function.
 
@@ -906,7 +915,7 @@ def simple_default_pipeline(
             calculate_qc(adata)
         if (adata.obs["n_counts"] == 0).sum() > 0:
             adata = adata[adata.obs["n_counts"] > 0].copy()
-        k_cell = filter_qc_outlier(adata, **filter_kw)
+        k_cell = filter_qc_outlier_legacy(adata, **filter_kw)
         if batch:
             if isinstance(batch, (list, tuple)):
                 for b in batch:

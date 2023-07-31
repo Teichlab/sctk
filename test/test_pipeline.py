@@ -6,26 +6,23 @@ from sctk import (
     auto_filter_cells,
     auto_zoom_in,
     calculate_qc,
+    cellwise_qc,
+    clusterwise_qc,
     crossmap,
     custom_pipeline,
-    find_good_qc_cluster,
     generate_qc_clusters,
     get_good_sized_batch,
     integrate,
     recluster_subset,
     simple_default_pipeline,
 )
-from sctk._pipeline import _scale_factor, fit_gaussian, filter_qc_outlier2
+from sctk._pipeline import _scale_factor, fit_gaussian
 from sklearn.mixture import GaussianMixture
 
 
 def test_calculate_qc():
     # create test data
-    adata = anndata.AnnData(
-        X=np.random.rand(100, 100),
-        obs=pd.DataFrame(index=[f"cell{i}" for i in range(100)]),
-        var=pd.DataFrame(index=[f"gene{i}" for i in range(100)]),
-    )
+    adata = sc.datasets.pbmc68k_reduced()
 
     # test that calculate_qc adds expected columns to adata.obs and adata.var
     calculate_qc(adata)
@@ -71,43 +68,33 @@ def test_fit_gaussian():
     x = np.random.normal(5, 2, 1000)
 
     # test that fit_gaussian returns expected values
-    x_peak, x_left, x_right = fit_gaussian(x, n=2, threshold=0.05, plot=False)
+    x_peak, x_left, x_right = fit_gaussian(x, n_components=[2], threshold=0.05, plot=False)
     assert -1 < x_peak < 1
     assert 9 < x_left < 11
     assert isinstance(x_right, GaussianMixture)
 
 
-def test_filter_qc_outlier2():
+def test_cellwise_qc():
     # Load example dataset
     adata = sc.datasets.pbmc68k_reduced()
 
     # Test default metrics
-    pass_filter = filter_qc_outlier2(adata)
-    assert isinstance(pass_filter, np.ndarray)
-    assert pass_filter.shape[0] == adata.shape[0]
+    cellwise_qc(adata)
+    assert "cell_passed_qc" in adata.obs.columns
 
-    # Test custom metrics
-    pass_filter = filter_qc_outlier2(
+    # Test custom metrics and custom storage key
+    cellwise_qc(
         adata,
         metrics={
             "n_counts": [500, None, "log", "min_only", 0.5],
             "percent_mito": [0.05, None, "linear", "max_only", 0.5],
         },
+        cell_qc_key = "CQK"
     )
-    assert isinstance(pass_filter, np.ndarray)
-    assert pass_filter.shape[0] == adata.shape[0]
-
-    # Test force=True
-    pass_filter = filter_qc_outlier2(
-        adata,
-        metrics=["n_counts", "percent_mito"],
-        force=True,
-    )
-    assert isinstance(pass_filter, np.ndarray)
-    assert pass_filter.shape[0] == adata.shape[0]
+    assert "CQK" in adata.obs.columns
 
 
-def test_find_good_qc_cluster():
+def test_clusterwise_qc():
     # Load example dataset
     adata = sc.datasets.pbmc3k()
     calculate_qc(adata)
@@ -121,27 +108,22 @@ def test_find_good_qc_cluster():
             "percent_hb",
         ],
     )
+    cellwise_qc(adata)
 
-    # Test default metrics
-    find_good_qc_cluster(adata)
-    assert "fqo2" in adata.obs
-    assert "good_qc_clusters" in adata.obs
+    # Test default
+    clusterwise_qc(adata)
+    assert "cluster_passed_qc" in adata.obs
 
-    # Test custom metrics (all samples fail here)
-    metrics = {
-        "n_counts": (500, 5000, "log", "both", 0.1),
-        "n_genes": (200, 5000, "log", "both", 0.1),
-        "percent_mito": (0, 1, "log", "both", 0.1),
-    }
-    find_good_qc_cluster(
+    # Test custom cell QC key
+    # Set all but one cells to fail
+    adata.obs['all_cells_fail'] = [True]+[False]*(adata.shape[0]-1)
+    clusterwise_qc(
         adata,
-        metrics=metrics,
-        threshold=0.6,
-        key_added="custom_good_qc_clusters",
+        cell_qc_key = "all_cells_fail",
+        key_added = "all_clusters_fail"
     )
-    assert "fqo2" in adata.obs
-    assert "custom_good_qc_clusters" in adata.obs
-    assert adata.obs["custom_good_qc_clusters"].sum() == 0
+    assert "all_clusters_fail" in adata.obs
+    assert adata.obs["all_clusters_fail"].sum() == 0
 
 
 def test_get_good_sized_batch():
