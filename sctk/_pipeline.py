@@ -1114,7 +1114,7 @@ def auto_zoom_in(
         leiden_kw: Additional keyword arguments to pass to the `leiden`
             function.
         marker_kw: Additional keyword arguments to pass to the
-            `filter_marker_stats` function.
+            :py:func:`filter_marker_stats` function.
 
     Returns:
         None.
