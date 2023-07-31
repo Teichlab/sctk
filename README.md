@@ -1,4 +1,4 @@
-![![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Python](https://img.shields.io/badge/python-3.9-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10-blue.svg)
 <!-- [![PyPI version](https://badge.fury.io/py/sctk.svg)](https://badge.fury.io/py/sctk) -->
