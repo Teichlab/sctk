@@ -35,6 +35,7 @@ jobs:
       run: coverage-badge -f -o coverage.svg
 
     - name: Commit changes
+      if: steps.verify_diff.outputs.changed == 'true'
       run: |
         git config --global user.email "no-reply@github.com"
         git config --global user.name "GitHub Actions"
