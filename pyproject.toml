@@ -5,6 +5,7 @@ description = "single cell analysis tool kit based on scanpy"
 authors = [
     "nh3 <nh3@users.noreply.github.com>", 
     "Sebastian Lobentanzer <sebastian.lobentanzer@uni-heidelberg.de>",
+    "Krzysztof Polanski <kp9@sanger.ac.uk>",
 ]
 license = "GPL-3.0"
 readme = "README.md"
