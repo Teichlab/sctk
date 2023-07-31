@@ -153,12 +153,12 @@ def generate_qc_clusters(
     Args:
         ad: AnnData object to generate QC clusters for.
 
-        metrics: List of QC metrics to use for generating QC clusters. Must be 
+        metrics: List of QC metrics to use for generating QC clusters. Must be
         present as obs columns.
 
         aux_ad: Optional auxiliary AnnData object to use for generating QC
-        clusters, created by an earlier call of this function and returned if 
-        return_aux is set to True. Its neighbour graph will be used for 
+        clusters, created by an earlier call of this function and returned if
+        return_aux is set to True. Its neighbour graph will be used for
         clustering and its UMAP will be transferred to the input object.
 
         n_pcs: Number of principal components to use for PCA. If not provided,
@@ -242,7 +242,7 @@ def _scale_factor(x):
 
 def fit_gaussian(
     x,
-    n_components=np.arange(10)+1,
+    n_components=np.arange(10) + 1,
     threshold=0.05,
     xmin=None,
     xmax=None,
@@ -298,7 +298,7 @@ def fit_gaussian(
     x_fit = x[(x >= xmin) & (x <= xmax)]
     f = _scale_factor(x_fit)
     x_fit = (x_fit * f).reshape(-1, 1)
-    #try a bunch of different component counts for the GMM
+    # try a bunch of different component counts for the GMM
     gmms = []
     bics = []
     for n in n_components:
@@ -308,15 +308,15 @@ def fit_gaussian(
             gmm.fit(x_fit, warm_start=True)
         gmms.append(gmm)
         bics.append(gmm.bic(x_fit))
-    #pick best one based on BIC (the lower the better)
-    #making this plot is useless if there's a single component count
-    if plot and len(n_components)>1:
+    # pick best one based on BIC (the lower the better)
+    # making this plot is useless if there's a single component count
+    if plot and len(n_components) > 1:
         plt.plot(n_components, bics)
         plt.xlabel("GMM components")
         plt.ylabel("BIC")
         plt.show()
-    #the minimum bic's index is the position in n_components
-    #as well as the gmm list
+    # the minimum bic's index is the position in n_components
+    # as well as the gmm list
     n = n_components[np.argmin(bics)]
     gmm = gmms[np.argmin(bics)]
     x0 = np.linspace(x.min(), x.max(), num=nbins)
@@ -379,7 +379,7 @@ def fit_gaussian(
 
 def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
     """
-    Filter cells in an AnnData object based on quality control metrics. The 
+    Filter cells in an AnnData object based on quality control metrics. The
     object is modified in-place.
 
     This function filters cells in an AnnData object based on quality control
@@ -393,11 +393,11 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
 
         metrics: Optional list/tuple of metric names or dictionary of metric
         names and their corresponding parameters. If not provided, the function
-        uses a set of default metrics. For defaults and an explanation, please 
+        uses a set of default metrics. For defaults and an explanation, please
         refer to the QC workflow demo notebook.
 
         cell_qc_key: Obs column in the object to store the per-cell QC calls in.
-        
+
         **kwargs: Additional keyword arguments to pass to the
         *`fit_gaussian` function.
 
@@ -489,7 +489,9 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
     print(f"{all_passed.sum()}/{n_obs} pass")
     adata.obs[cell_qc_key] = all_passed
     if adata.obs[cell_qc_key].sum() == 0:
-        print("No cells passed. Performing simple filtering on counts, genes and mito%")
+        print(
+            "No cells passed. Performing simple filtering on counts, genes and mito%"
+        )
         adata.obs[cell_qc_key] = (
             (adata.obs.n_counts >= metrics["n_counts"][0])
             & (adata.obs.n_genes >= metrics["n_genes"][0])
@@ -706,22 +708,27 @@ def filter_qc_outlier_legacy(
     return k_pass
 
 
-def clusterwise_qc(ad, threshold=0.5, cell_qc_key="cell_passed_qc", key_added="cluster_passed_qc") -> None:
+def clusterwise_qc(
+    ad,
+    threshold=0.5,
+    cell_qc_key="cell_passed_qc",
+    key_added="cluster_passed_qc",
+) -> None:
     """
     Find good quality control (QC) clusters in an AnnData object.
 
     This function finds good quality control (QC) clusters in an AnnData object
-    by identifying clusters that have a high proportion of cells that pass the 
+    by identifying clusters that have a high proportion of cells that pass the
     QC filter.
 
     Args:
-        ad: AnnData object to find good QC clusters in. Needs qc_cluster 
+        ad: AnnData object to find good QC clusters in. Needs qc_cluster
         present in obs.
 
-        threshold: Clusters featuring at least this fraction of good QC cells 
+        threshold: Clusters featuring at least this fraction of good QC cells
         will be deemed good QC clusters.
 
-        cell_qc_key: Key to use to retrieve per-cell QC calls from obs in the 
+        cell_qc_key: Key to use to retrieve per-cell QC calls from obs in the
         AnnData.
 
         key_added: Key to use for storing the results in the AnnData obs object.
@@ -1781,11 +1788,11 @@ def auto_filter_cells(
         min_gene: Minimum number of genes per cell to retain. Default is 50.
 
         subset: Whether to return a subset of the original AnnData object
-        containing only the passing cells. Default is True.
+            containing only the passing cells. Default is True.
 
         filter_kw: Dictionary of keyword arguments to pass to the
-        `simple_default_pipeline` function. Default is a set of default filter
-        parameters.
+            `simple_default_pipeline` function. Default is a set of default filter
+            parameters.
 
     Returns:
         If `subset` is True, a new AnnData object containing only the passing
