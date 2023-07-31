@@ -32,7 +32,7 @@ jobs:
       run: coverage run -m pytest
 
     - name: Generate coverage badge
-      run: coverage-badge -o coverage.svg
+      run: coverage-badge -f -o coverage.svg
 
     - name: Commit changes
       run: |
