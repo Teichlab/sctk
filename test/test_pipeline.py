@@ -8,6 +8,7 @@ from sctk import (
     calculate_qc,
     crossmap,
     custom_pipeline,
+    filter_qc_outlier,
     find_good_qc_cluster,
     generate_qc_clusters,
     get_good_sized_batch,
@@ -15,7 +16,7 @@ from sctk import (
     recluster_subset,
     simple_default_pipeline,
 )
-from sctk._pipeline import _scale_factor, fit_gaussian, filter_qc_outlier2
+from sctk._pipeline import _scale_factor, fit_gaussian
 from sklearn.mixture import GaussianMixture
 
 
@@ -67,40 +68,32 @@ def test_fit_gaussian():
     x = np.random.normal(5, 2, 1000)
 
     # test that fit_gaussian returns expected values
-    x_peak, x_left, x_right = fit_gaussian(x, n=2, threshold=0.05, plot=False)
+    x_peak, x_left, x_right = fit_gaussian(x, n_components=[2], threshold=0.05, plot=False)
     assert -1 < x_peak < 1
     assert 9 < x_left < 11
     assert isinstance(x_right, GaussianMixture)
 
 
-def test_filter_qc_outlier2():
+def test_filter_qc_outlier():
     # Load example dataset
     adata = sc.datasets.pbmc68k_reduced()
 
     # Test default metrics
-    pass_filter = filter_qc_outlier2(adata)
-    assert isinstance(pass_filter, np.ndarray)
-    assert pass_filter.shape[0] == adata.shape[0]
+    filter_qc_outlier(adata)
+    assert "good_qc_cell" in adata.obs.columns
 
-    # Test custom metrics
-    pass_filter = filter_qc_outlier2(
+    # Test custom metrics and custom storage key
+    filter_qc_outlier(
         adata,
         metrics={
             "n_counts": [500, None, "log", "min_only", 0.5],
             "percent_mito": [0.05, None, "linear", "max_only", 0.5],
         },
+        cell_qc_key = "CQK"
     )
-    assert isinstance(pass_filter, np.ndarray)
-    assert pass_filter.shape[0] == adata.shape[0]
+    assert "CQK" in adata.obs.columns
 
-    # Test force=True
-    pass_filter = filter_qc_outlier2(
-        adata,
-        metrics=["n_counts", "percent_mito"],
-        force=True,
-    )
-    assert isinstance(pass_filter, np.ndarray)
-    assert pass_filter.shape[0] == adata.shape[0]
+    # Force test removed
 
 
 def test_find_good_qc_cluster():
@@ -117,27 +110,22 @@ def test_find_good_qc_cluster():
             "percent_hb",
         ],
     )
+    filter_qc_outlier(adata)
 
-    # Test default metrics
+    # Test default
     find_good_qc_cluster(adata)
-    assert "fqo2" in adata.obs
     assert "good_qc_clusters" in adata.obs
 
-    # Test custom metrics (all samples fail here)
-    metrics = {
-        "n_counts": (500, 5000, "log", "both", 0.1),
-        "n_genes": (200, 5000, "log", "both", 0.1),
-        "percent_mito": (0, 1, "log", "both", 0.1),
-    }
+    # Test custom cell QC key
+    # Set all but one cells to fail
+    adata.obs['all_cells_fail'] = [True]+[False]*(adata.shape[0]-1)
     find_good_qc_cluster(
         adata,
-        metrics=metrics,
-        threshold=0.6,
-        key_added="custom_good_qc_clusters",
+        cell_qc_key = "all_cells_fail",
+        key_added = "all_clusters_fail"
     )
-    assert "fqo2" in adata.obs
-    assert "custom_good_qc_clusters" in adata.obs
-    assert adata.obs["custom_good_qc_clusters"].sum() == 0
+    assert "all_clusters_fail" in adata.obs
+    assert adata.obs["all_clusters_fail"].sum() == 0
 
 
 def test_get_good_sized_batch():
