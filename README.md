@@ -16,4 +16,4 @@ pip install --upgrade pip
 
 ## Usage
 
-An example of applying the automatic QC workflow can be found in the [demo notebook](demo.ipynb).
+An example of applying the automatic QC workflow can be found in the [demo notebook](notebooks/automatic_qc.ipynb).
