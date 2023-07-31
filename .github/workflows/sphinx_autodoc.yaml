@@ -25,7 +25,7 @@ jobs:
         -   name: Install library
             run: poetry install --no-interaction
         -   name: Install pandoc
-            run: apt-get -y install pandoc
+            run: sudo apt-get -y install pandoc
         -   name: Build documentation
             run: poetry run make html --directory docs/
         -   name: Commit files
