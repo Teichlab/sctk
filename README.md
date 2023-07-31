@@ -6,6 +6,7 @@
 
 ```bash
 pip install git+https://github.com/Teichlab/sctk.git
+```
 
 ## Usage
 
