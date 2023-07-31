@@ -1,9 +1,9 @@
 API Reference
 =============
 
-``_pipeline.py``: QC pipeline
------------------------------
+QC pipeline
+-----------
+.. automodule:: sctk
+   :members: calculate_qc, generate_qc_clusters, cellwise_qc, clusterwise_qc
 .. automodule:: sctk._pipeline
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   :members: fit_gaussian
