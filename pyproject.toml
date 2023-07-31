@@ -23,6 +23,7 @@ harmonypy = "^0.0.9"
 pytest = "^7.4.0"
 coverage = "^7.2.7"
 ipykernel = "^6.25.0"
+coverage-badge = "^1.1.0"
 
 [build-system]
 requires = ["poetry-core"]

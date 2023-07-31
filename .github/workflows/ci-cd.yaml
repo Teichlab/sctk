@@ -29,4 +29,18 @@ jobs:
       run: poetry install
 
     - name: Run Tests
-      run: pytest
+      run: coverage run -m pytest
+
+    - name: Generate coverage badge
+      run: coverage-badge -o coverage.svg
+
+    - name: Commit changes
+      run: |
+        git config --global user.email "no-reply@github.com"
+        git config --global user.name "GitHub Actions"
+        git add coverage.svg
+        git commit -m "Update coverage badge"
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
