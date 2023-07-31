@@ -24,6 +24,7 @@ pytest = "^7.4.0"
 coverage = "^7.2.7"
 ipykernel = "^6.25.0"
 coverage-badge = "^1.1.0"
+bump2version = "^1.0.1"
 
 [build-system]
 requires = ["poetry-core"]
