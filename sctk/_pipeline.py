@@ -377,7 +377,7 @@ def fit_gaussian(
     return x_left, x_right, gmm
 
 
-def filter_qc_outlier(adata, metrics=None, force=False, cell_qc_key="good_qc_cell", **kwargs):
+def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
     """
     Filter cells in an AnnData object based on quality control metrics. The 
     object is modified in-place.
@@ -396,9 +396,6 @@ def filter_qc_outlier(adata, metrics=None, force=False, cell_qc_key="good_qc_cel
         uses a set of default metrics. For defaults and an explanation, please 
         refer to the QC workflow demo notebook.
 
-        force: If True, keep the GMM threshold based calls without assessing the 
-        fraction of cells passing the call.
-
         cell_qc_key: Obs column in the object to store the per-cell QC calls in.
         
         **kwargs: Additional keyword arguments to pass to the
@@ -416,7 +413,7 @@ def filter_qc_outlier(adata, metrics=None, force=False, cell_qc_key="good_qc_cel
         >>> import sctk
         >>> adata = sc.datasets.pbmc3k()
         >>> sctk.calculate_qc(adata)
-        >>> sctk.filter_qc_outlier(adata)
+        >>> sctk.cellwise_qc(adata)
     """
     default_metric_params = {
         "n_counts": (1000, None, "log", "min_only", 0.1),
@@ -468,7 +465,7 @@ def filter_qc_outlier(adata, metrics=None, force=False, cell_qc_key="good_qc_cel
         else:
             pass
         m_pass = (x_low <= x) & (x <= x_high)
-        if m_pass.sum() < n_obs * min_pass_rate and not force:
+        if m_pass.sum() < n_obs * min_pass_rate:
             if side == "min_only":
                 x_low = min_x
                 m_pass = min_x <= x
@@ -709,7 +706,7 @@ def filter_qc_outlier_legacy(
     return k_pass
 
 
-def find_good_qc_cluster(ad, threshold=0.5, cell_qc_key="good_qc_cell", key_added="good_qc_clusters") -> None:
+def clusterwise_qc(ad, threshold=0.5, cell_qc_key="cell_passed_qc", key_added="cluster_passed_qc") -> None:
     """
     Find good quality control (QC) clusters in an AnnData object.
 
@@ -742,8 +739,8 @@ def find_good_qc_cluster(ad, threshold=0.5, cell_qc_key="good_qc_cell", key_adde
         >>> sctk.calculate_qc(adata)
         >>> metrics_list = ["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb"]
         >>> sctk.generate_qc_clusters(adata, metrics=metrics_list)
-        >>> sctk.filter_qc_outlier(adata)
-        >>> sctk.find_good_qc_cluster(adata)
+        >>> sctk.cellwise_qc(adata)
+        >>> sctk.clusterwise_wc(adata)
 
     """
     if ad.obs[cell_qc_key].astype(bool).sum() == 0:

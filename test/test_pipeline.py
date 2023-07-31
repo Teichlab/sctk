@@ -6,10 +6,10 @@ from sctk import (
     auto_filter_cells,
     auto_zoom_in,
     calculate_qc,
+    cellwise_qc,
+    clusterwise_qc,
     crossmap,
     custom_pipeline,
-    filter_qc_outlier,
-    find_good_qc_cluster,
     generate_qc_clusters,
     get_good_sized_batch,
     integrate,
@@ -74,16 +74,16 @@ def test_fit_gaussian():
     assert isinstance(x_right, GaussianMixture)
 
 
-def test_filter_qc_outlier():
+def test_cellwise_qc():
     # Load example dataset
     adata = sc.datasets.pbmc68k_reduced()
 
     # Test default metrics
-    filter_qc_outlier(adata)
-    assert "good_qc_cell" in adata.obs.columns
+    cellwise_qc(adata)
+    assert "cell_passed_qc" in adata.obs.columns
 
     # Test custom metrics and custom storage key
-    filter_qc_outlier(
+    cellwise_qc(
         adata,
         metrics={
             "n_counts": [500, None, "log", "min_only", 0.5],
@@ -93,10 +93,8 @@ def test_filter_qc_outlier():
     )
     assert "CQK" in adata.obs.columns
 
-    # Force test removed
 
-
-def test_find_good_qc_cluster():
+def test_clusterwise_qc():
     # Load example dataset
     adata = sc.datasets.pbmc3k()
     calculate_qc(adata)
@@ -110,16 +108,16 @@ def test_find_good_qc_cluster():
             "percent_hb",
         ],
     )
-    filter_qc_outlier(adata)
+    cellwise_qc(adata)
 
     # Test default
-    find_good_qc_cluster(adata)
-    assert "good_qc_clusters" in adata.obs
+    clusterwise_qc(adata)
+    assert "cluster_passed_qc" in adata.obs
 
     # Test custom cell QC key
     # Set all but one cells to fail
     adata.obs['all_cells_fail'] = [True]+[False]*(adata.shape[0]-1)
-    find_good_qc_cluster(
+    clusterwise_qc(
         adata,
         cell_qc_key = "all_cells_fail",
         key_added = "all_clusters_fail"
