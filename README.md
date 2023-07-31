@@ -1,4 +1,5 @@
 ![CI](https://github.com/slobentanzer/sctk/actions/workflows/ci-cd.yaml/badge.svg)
+![Coverage](coverage.svg)
 
 # sctk
 
