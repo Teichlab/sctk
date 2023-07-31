@@ -3,7 +3,16 @@ API Reference
 
 QC pipeline
 -----------
-.. automodule:: sctk
-   :members: calculate_qc, generate_qc_clusters, cellwise_qc, clusterwise_qc
-.. automodule:: sctk._pipeline
-   :members: fit_gaussian
+.. module:: sctk
+.. autosummary::
+   :toctree: modules
+   
+   calculate_qc
+   generate_qc_clusters
+   cellwise_qc
+   clusterwise_qc
+.. module:: sctk._pipeline
+.. autosummary::
+   :toctree: modules
+   
+   fit_gaussian
