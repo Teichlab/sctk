@@ -31,6 +31,10 @@ feel free to approach us in any way you like.
 
 ## Versioning
 
+**Note: please do not increment the version number yourself on a feature branch.
+This will be done by the project administrators when the pull request is
+merged.**
+
 We use [semantic versioning](https://semver.org/) for the project. This means
 that the version number is incremented according to the following scheme:
 
@@ -41,9 +45,12 @@ that the version number is incremented according to the following scheme:
 
 - Increment the patch version number if you make backwards-compatible bug fixes.
 
-You can use the `bumpversion` tool to update the version number in the
-`pyproject.toml` file. This will create a new git tag automatically.
+Project administrators can use the `bumpversion` tool to update the version
+number in the `pyproject.toml` file. This will also create a new git tag
+automatically. The git tag still needs to be pushed to the remote repository
+manually.
 
 ```
 bumpversion [major|minor|patch]
+git push --tags
 ```
