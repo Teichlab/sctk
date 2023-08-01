@@ -1,0 +1,6 @@
+﻿sctk.calculate\_qc
+==================
+
+.. currentmodule:: sctk
+
+.. autofunction:: calculate_qc

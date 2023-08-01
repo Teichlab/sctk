@@ -1,0 +1,6 @@
+﻿sctk.cellwise\_qc
+=================
+
+.. currentmodule:: sctk
+
+.. autofunction:: cellwise_qc

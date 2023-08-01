@@ -1,0 +1,6 @@
+﻿sctk.\_pipeline.fit\_gaussian
+=============================
+
+.. currentmodule:: sctk._pipeline
+
+.. autofunction:: fit_gaussian

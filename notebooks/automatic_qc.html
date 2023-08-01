@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+<meta property="og:title" content="Automatic QC workflow tutorial" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="notebooks/automatic_qc.html" />
+<meta property="og:site_name" content="sctk" />
+<meta property="og:description" content="This notebook will show how to apply SCTK’s automatic QC workflow. The process has four steps: sctk.calculate_qc() computes QC measures, sctk.generate_qc_clusters() creates QC-space clusters of cel..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="/_images/social_previews/summary_notebooks_automatic_qc_fc5547dc.png" />
+<meta property="og:image:alt" content="This notebook will show how to apply SCTK’s automatic QC workflow. The process has four steps: sctk.calculate_qc() computes QC measures, sctk.generate_qc_clu..." />
+<meta name="description" content="This notebook will show how to apply SCTK’s automatic QC workflow. The process has four steps: sctk.calculate_qc() computes QC measures, sctk.generate_qc_clusters() creates QC-space clusters of cel..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automatic QC workflow tutorial &mdash; sctk</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../api.html" />
+    <link rel="prev" title="Single Cell analysis Tool Kit" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../contents.html" class="icon icon-home">
+            sctk
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Single Cell analysis Tool Kit</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Automatic QC workflow tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../contents.html">sctk</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../contents.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Automatic QC workflow tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/automatic_qc.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars and line breaks on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+    white-space: pre;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Automatic-QC-workflow-tutorial">
+<h1>Automatic QC workflow tutorial<a class="headerlink" href="#Automatic-QC-workflow-tutorial" title="Permalink to this heading"></a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+<span class="kn">import</span> <span class="nn">sctk</span>
+
+<span class="n">sc</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">set_figure_params</span><span class="p">(</span><span class="n">dpi</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>This notebook will show how to apply SCTK’s automatic QC workflow. The process has four steps:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sctk.calculate_qc()</span></code> computes QC measures</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sctk.generate_qc_clusters()</span></code> creates QC-space clusters of cells</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> performs cell-level QC calling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sctk.clusterwise_qc()</span></code> computes cluster-wide statistics of cell quality</p></li>
+</ul>
+<p>Let’s use Scanpy’s PBMC object as input.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">pbmc3k</span><span class="p">()</span>
+<span class="n">adata</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AnnData object with n_obs × n_vars = 2700 × 32738
+    var: &#39;gene_ids&#39;
+</pre></div></div>
+</div>
+<p>This object features raw counts for some PBMC data, and nothing else for now. We can use <code class="docutils literal notranslate"><span class="pre">sctk.calculate_qc()</span></code> to automatically flag some common technical features (the defaults are human mitochondrial, ribosomal and hemoglobin genes) and subsequently use <code class="docutils literal notranslate"><span class="pre">sc.pp.calculate_qc_metrics()</span></code> to compute their percentages in each cell, along with standard measures like the number of genes and counts.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">calculate_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+<span class="n">adata</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AnnData object with n_obs × n_vars = 2700 × 32738
+    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;
+    var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
+</pre></div></div>
+</div>
+<p>You can see the <code class="docutils literal notranslate"><span class="pre">.obs</span></code> of the object populated with the QC measures we just generated.</p>
+<p>The second step of the QC workflow is to cluster the cells based on specified metrics, performing a quick Scanpy analysis using the metrics as features. This creates groups of cells that have similar QC profiles.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#present as columns in obs of the object</span>
+<span class="n">metrics_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;log1p_n_counts&quot;</span><span class="p">,</span> <span class="s2">&quot;log1p_n_genes&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_mito&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_ribo&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_hb&quot;</span><span class="p">]</span>
+<span class="n">sctk</span><span class="o">.</span><span class="n">generate_qc_clusters</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics_list</span><span class="p">)</span>
+<span class="n">adata</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/jovyan/my-conda-envs/sctk/lib/python3.9/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AnnData object with n_obs × n_vars = 2700 × 32738
+    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;qc_cluster&#39;
+    var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
+    obsm: &#39;X_umap_qc&#39;
+</pre></div></div>
+</div>
+<p>There’s now an <code class="docutils literal notranslate"><span class="pre">.obs</span></code> column called <code class="docutils literal notranslate"><span class="pre">qc_cluster</span></code>, and an embedding called <code class="docutils literal notranslate"><span class="pre">X_umap_qc</span></code>. Let’s take a look!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="s2">&quot;X_umap_qc&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;qc_cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;log1p_n_counts&quot;</span><span class="p">],</span> <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;OrRd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/jovyan/my-conda-envs/sctk/lib/python3.9/site-packages/scanpy/plotting/_tools/scatterplots.py:392: UserWarning: No data for colormapping provided via &#39;c&#39;. Parameters &#39;cmap&#39; will be ignored
+  cax = scatter(
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_automatic_qc_9_1.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_9_1.png" style="width: 667px; height: 299px;" />
+</div>
+</div>
+<p>The next step of the workflow involves determining which of the cells pass QC individually.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">cellwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+<span class="n">adata</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+n_counts: [959.4421576429211, 15844.0029296875], 2563/2700 passed
+n_genes: [320.5358429786537, 3421.998779296875], 2678/2700 passed
+percent_mito: [0.0, 5.943145075272779], 2674/2700 passed
+percent_ribo: [13.568207997582016, 51.07162303563632], 2627/2700 passed
+WARNING: Failed to find lower bound, using min value instead.
+percent_hb: [0.0, 0.002321736026317521], 2375/2700 passed
+2184/2700 pass
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AnnData object with n_obs × n_vars = 2700 × 32738
+    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;qc_cluster&#39;, &#39;cell_passed_qc&#39;
+    var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
+    uns: &#39;qc_cluster_colors&#39;
+    obsm: &#39;X_umap_qc&#39;
+</pre></div></div>
+</div>
+<p>There’s now a <code class="docutils literal notranslate"><span class="pre">cell_passed_qc</span></code> column in <code class="docutils literal notranslate"><span class="pre">.obs</span></code> which features per-cell QC calls.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;cell_passed_qc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2184
+</pre></div></div>
+</div>
+<p>Controlling the desired QC thresholds requires a bit of explanation.</p>
+<p>Under the hood, <code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> models each of the specified QC metrics as a Gaussian mixture model, with the model proposing possible low and high value cutoffs at points where the probability density function of the mixture falls below a threshold (0.05 by default). The function is written to allow robust filtering, requiring a specific formatting of <code class="docutils literal notranslate"><span class="pre">metrics</span></code>. The default values are:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>metrics = {
+    &quot;n_counts&quot;: (1000, None, &quot;log&quot;, &quot;min_only&quot;, 0.1),
+    &quot;n_genes&quot;: (100, None, &quot;log&quot;, &quot;min_only&quot;, 0.1),
+    &quot;percent_mito&quot;: (0.01, 20, &quot;log&quot;, &quot;max_only&quot;, 0.1),
+    &quot;percent_ribo&quot;: (0, 100, &quot;log&quot;, &quot;both&quot;, 0.1),
+    &quot;percent_hb&quot;: (None, 1, &quot;log&quot;, &quot;max_only&quot;, 0.1),
+    &quot;percent_soup&quot;: (None, 5, &quot;log&quot;, &quot;max_only&quot;, 0.1),
+    &quot;percent_spliced&quot;: (50, 97.5, &quot;log&quot;, &quot;both&quot;, 0.1),
+    &quot;scrublet_score&quot;: (None, 0.3, &quot;linear&quot;, &quot;max_only&quot;, 0.95),
+}
+</pre></div>
+</div>
+<p>The variable is a dictionary, with keys named after computed QC metrics present in the <code class="docutils literal notranslate"><span class="pre">.obs</span></code> of the input object. Values absent from <code class="docutils literal notranslate"><span class="pre">.obs</span></code> will get skipped (so in our case, <code class="docutils literal notranslate"><span class="pre">percent_soup</span></code>, <code class="docutils literal notranslate"><span class="pre">percent_spliced</span></code> and <code class="docutils literal notranslate"><span class="pre">scrublet_score</span></code> all got bypassed when we ran the function). The value is a five-element tuple controlling the input to the GMM and subsequent filtering behaviour:</p>
+<ul class="simple">
+<li><p>the minimum value to use in modelling the distribution; values lower than this will be skipped; set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to use the encountered minimum</p></li>
+<li><p>the maximum value to use in modelling the distribution; values higher than this will be skipped; set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to use the encountered maximum</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;log&quot;</span></code> to log-transform the QC metric values prior to modelling, <code class="docutils literal notranslate"><span class="pre">&quot;linear&quot;</span></code> to keep the values un-transformed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;min_only&quot;</span></code> to only perform filtering of low values, <code class="docutils literal notranslate"><span class="pre">&quot;max_only&quot;</span></code> to only perform filtering of high values, <code class="docutils literal notranslate"><span class="pre">&quot;both&quot;</span></code> to perform filtering from both sides</p></li>
+<li><p>the minimum proportion of cells that need to pass the filtering on this feature; if the fraction is too low, the GMM is discarded and the QC values are thresholded based on the provided minimum/maximum</p></li>
+</ul>
+<p>As the function goes along, it prints out the actual QC metric value ranges it used in filtering, and how many cells fall within that range. For example, notice how we specified a 100-gene minimum for the modelling, but the proposed data-driven cutoff ends up being 320.</p>
+<p>Let’s try out modifying the <code class="docutils literal notranslate"><span class="pre">metrics</span></code> values by removing the three measures absent from our object, and increasing the <code class="docutils literal notranslate"><span class="pre">n_genes</span></code> minimum to 500.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;n_counts&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;min_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+    <span class="s2">&quot;n_genes&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;min_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+    <span class="s2">&quot;percent_mito&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;max_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+    <span class="s2">&quot;percent_ribo&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+    <span class="s2">&quot;percent_hb&quot;</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;max_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">sctk</span><span class="o">.</span><span class="n">cellwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+n_counts: [959.4421576429211, 15844.0029296875], 2563/2700 passed
+n_genes: [495.3027116195289, 3421.998779296875], 2486/2700 passed
+percent_mito: [0.0, 5.943145075272779], 2674/2700 passed
+percent_ribo: [13.568207997582016, 51.07162303563632], 2627/2700 passed
+WARNING: Failed to find lower bound, using min value instead.
+percent_hb: [0.0, 0.002321736026317521], 2375/2700 passed
+2118/2700 pass
+</pre></div></div>
+</div>
+<p>The gene count filtering is different now, as expected.</p>
+<p>The final step of the workflow determines computes a fraction of passing cells for each cluster. If a cluster has a high enough fraction of passing cells (controlled via the <code class="docutils literal notranslate"><span class="pre">threshold</span></code> parameter, default 0.5), it’s deemed to be a good QC cluster.</p>
+<p>You can use your own per-cell QC calls here rather than the ones provided by <code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> if desired, just specify which <code class="docutils literal notranslate"><span class="pre">.obs</span></code> column to take via the <code class="docutils literal notranslate"><span class="pre">cell_qc_key</span></code> argument.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">clusterwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+<span class="n">adata</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AnnData object with n_obs × n_vars = 2700 × 32738
+    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;qc_cluster&#39;, &#39;cell_passed_qc&#39;, &#39;cluster_passed_qc&#39;
+    var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
+    uns: &#39;qc_cluster_colors&#39;
+    obsm: &#39;X_umap_qc&#39;
+</pre></div></div>
+</div>
+<p>There’s now a <code class="docutils literal notranslate"><span class="pre">cluster_passed_qc</span></code> column. Let’s take a look how it compares to the cell level QC.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#this won&#39;t be necessary in scanpy 1.10.0, booleans will become directly plottable</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cell_passed_qc&#39;</span><span class="p">,</span> <span class="s1">&#39;cluster_passed_qc&#39;</span><span class="p">]:</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">col</span><span class="o">+</span><span class="s2">&quot;_int&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="s2">&quot;X_umap_qc&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cell_passed_qc_int&quot;</span><span class="p">,</span> <span class="s2">&quot;cluster_passed_qc_int&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_automatic_qc_19_0.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_19_0.png" style="width: 667px; height: 299px;" />
+</div>
+</div>
+<p>We seem to get a nontrivial number of cells individually flagged as poor quality colocating in the top left of the plot, but only a small subset of them remain after cluster membership is leveraged. Let’s generate a new set of QC clusters by increasing the resolution parameter value, creating a higher number of smaller clusters as a result.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">generate_qc_clusters</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics_list</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">sctk</span><span class="o">.</span><span class="n">clusterwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+
+<span class="c1">#this won&#39;t be necessary in scanpy 1.10.0, booleans will become directly plottable</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cell_passed_qc&#39;</span><span class="p">,</span> <span class="s1">&#39;cluster_passed_qc&#39;</span><span class="p">]:</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">col</span><span class="o">+</span><span class="s2">&quot;_int&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="s2">&quot;X_umap_qc&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cell_passed_qc_int&quot;</span><span class="p">,</span> <span class="s2">&quot;cluster_passed_qc_int&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_automatic_qc_21_0.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_21_0.png" style="width: 667px; height: 299px;" />
+</div>
+</div>
+<p>The plots align better now.</p>
+<p>At this point you should be able to use the QC workflow on your own data.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Single Cell analysis Tool Kit" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Teichmann lab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
