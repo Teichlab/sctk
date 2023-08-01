@@ -41,6 +41,10 @@ from ._markers import calc_marker_stats, filter_marker_stats
 
 
 class QcLowPassError(ValueError):
+    """
+    Error raised when a QC minimum requirements are not met for a dataset.
+    """
+
     pass
 
 
@@ -58,19 +62,14 @@ def calculate_qc(
 
     Args:
         adata: AnnData object to calculate QC metrics for.
-
         flags: Dictionary of QC flags and regular expression patterns to match
-        gene names against.
-
+            gene names against.
         extra_flags: Additional QC flags and patterns to add to `flags`.
-
         flag_only: If True, only calculate QC flags and do not calculate other
-        metrics.
-
+            metrics.
         suffix: Suffix to append to QC metric names.
-
         **kwargs: Additional keyword arguments to pass to
-        *`scanpy.pp.calculate_qc_metrics`.
+            :py:func:`scanpy.pp.calculate_qc_metrics`.
 
     Returns:
         None.
@@ -152,26 +151,20 @@ def generate_qc_clusters(
 
     Args:
         ad: AnnData object to generate QC clusters for.
-
-        metrics: List of QC metrics to use for generating QC clusters. Must be 
-        present as obs columns.
-
+        metrics: List of QC metrics to use for generating QC clusters. Must be
+            present as obs columns.
         aux_ad: Optional auxiliary AnnData object to use for generating QC
-        clusters, created by an earlier call of this function and returned if 
-        return_aux is set to True. Its neighbour graph will be used for 
-        clustering and its UMAP will be transferred to the input object.
-
+            clusters, created by an earlier call of this function and returned if
+            return_aux is set to True. Its neighbour graph will be used for
+            clustering and its UMAP will be transferred to the input object.
         n_pcs: Number of principal components to use for PCA. If not provided,
-        this will be set to max(2, len(metrics) - 2).
-
+            this will be set to max(2, len(metrics) - 2).
         n_neighbors: Number of nearest neighbors to use for constructing the
-        nearest neighbor graph. If not provided, this will be set to min(max(5,
-        int(ad.n_obs / 500)), 10).
-
+            nearest neighbor graph. If not provided, this will be set to min(max(5,
+            int(ad.n_obs / 500)), 10).
         res: Resolution parameter to use for the Leiden clustering algorithm.
-
         return_aux: If True, return the auxiliary AnnData object used for
-        generating QC clusters.
+            generating QC clusters.
 
     Returns:
         If `return_aux` is False, returns None. Otherwise, returns the auxiliary
@@ -242,7 +235,7 @@ def _scale_factor(x):
 
 def fit_gaussian(
     x,
-    n_components=np.arange(10)+1,
+    n_components=np.arange(10) + 1,
     threshold=0.05,
     xmin=None,
     xmax=None,
@@ -260,23 +253,16 @@ def fit_gaussian(
 
     Args:
         x: 1D numpy array to fit a Gaussian mixture model to.
-
         n_components: Number of components to use for the Gaussian mixture model.
-        The best GMM will be selected based on BIC.
-
+            The best GMM will be selected based on BIC.
         threshold: Threshold value for determining the lower and upper bounds of
-        the fitted Gaussian distribution.
-
+            the fitted Gaussian distribution.
         xmin: Minimum value to use for the fitted Gaussian distribution. If not
-        provided, this will be set to the minimum value of `x`.
-
+            provided, this will be set to the minimum value of `x`.
         xmax: Maximum value to use for the fitted Gaussian distribution. If not
-        provided, this will be set to the maximum value of `x`.
-
+            provided, this will be set to the maximum value of `x`.
         plot: If True, plot the fitted Gaussian distribution.
-
         nbins: Number of bins to use for the distribution of `x`.
-
         hist_bins: Number of bins to use for the histogram of `x` in the plot.
 
     Returns:
@@ -298,7 +284,7 @@ def fit_gaussian(
     x_fit = x[(x >= xmin) & (x <= xmax)]
     f = _scale_factor(x_fit)
     x_fit = (x_fit * f).reshape(-1, 1)
-    #try a bunch of different component counts for the GMM
+    # try a bunch of different component counts for the GMM
     gmms = []
     bics = []
     for n in n_components:
@@ -308,15 +294,15 @@ def fit_gaussian(
             gmm.fit(x_fit, warm_start=True)
         gmms.append(gmm)
         bics.append(gmm.bic(x_fit))
-    #pick best one based on BIC (the lower the better)
-    #making this plot is useless if there's a single component count
-    if plot and len(n_components)>1:
+    # pick best one based on BIC (the lower the better)
+    # making this plot is useless if there's a single component count
+    if plot and len(n_components) > 1:
         plt.plot(n_components, bics)
         plt.xlabel("GMM components")
         plt.ylabel("BIC")
         plt.show()
-    #the minimum bic's index is the position in n_components
-    #as well as the gmm list
+    # the minimum bic's index is the position in n_components
+    # as well as the gmm list
     n = n_components[np.argmin(bics)]
     gmm = gmms[np.argmin(bics)]
     x0 = np.linspace(x.min(), x.max(), num=nbins)
@@ -379,7 +365,7 @@ def fit_gaussian(
 
 def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
     """
-    Filter cells in an AnnData object based on quality control metrics. The 
+    Filter cells in an AnnData object based on quality control metrics. The
     object is modified in-place.
 
     This function filters cells in an AnnData object based on quality control
@@ -390,23 +376,20 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
 
     Args:
         adata: AnnData object to filter cells from.
-
         metrics: Optional list/tuple of metric names or dictionary of metric
-        names and their corresponding parameters. If not provided, the function
-        uses a set of default metrics. For defaults and an explanation, please 
-        refer to the QC workflow demo notebook.
-
+            names and their corresponding parameters. If not provided, the function
+            uses a set of default metrics. For defaults and an explanation, please
+            refer to the QC workflow demo notebook.
         cell_qc_key: Obs column in the object to store the per-cell QC calls in.
-        
         **kwargs: Additional keyword arguments to pass to the
-        *`fit_gaussian` function.
+            :py:func:`fit_gaussian` function.
 
     Returns:
         None.
 
     Raises:
         ValueError: If `metrics` is not a list/tuple of metric names or a
-        dictionary of metric names and their corresponding parameters.
+            dictionary of metric names and their corresponding parameters.
 
     Examples:
         >>> import scanpy as sc
@@ -489,7 +472,9 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
     print(f"{all_passed.sum()}/{n_obs} pass")
     adata.obs[cell_qc_key] = all_passed
     if adata.obs[cell_qc_key].sum() == 0:
-        print("No cells passed. Performing simple filtering on counts, genes and mito%")
+        print(
+            "No cells passed. Performing simple filtering on counts, genes and mito%"
+        )
         adata.obs[cell_qc_key] = (
             (adata.obs.n_counts >= metrics["n_counts"][0])
             & (adata.obs.n_genes >= metrics["n_genes"][0])
@@ -529,41 +514,28 @@ def filter_qc_outlier_legacy(
 
     Args:
         adata: AnnData object to filter.
-
         metrics: List of QC metrics to use for filtering.
-
         min_count: Minimum number of counts per cell.
-
         min_gene: Minimum number of genes per cell.
-
         min_mito: Minimum percentage of mitochondrial genes per cell.
-
         max_mito: Maximum percentage of mitochondrial genes per cell.
-
         min_ribo: Minimum percentage of ribosomal genes per cell.
-
         max_ribo: Maximum percentage of ribosomal genes per cell.
-
         max_hb: Maximum percentage of hemoglobin genes per cell.
-
         min_top50: Minimum percentage of reads mapping to the top 50 genes.
-
         max_top50: Maximum percentage of reads mapping to the top 50 genes.
-
         min_pass_rate: Minimum pass rate for the QC filter.
-
         onesided: Whether to use a one-sided or two-sided threshold for count
-        and gene metrics.
-
+            and gene metrics.
         force: Whether to force the function to pass even if the pass rate is
-        below the minimum threshold.
+            below the minimum threshold.
 
     Returns:
         Boolean array indicating which cells pass the QC filter.
 
     Raises:
         QcLowPassError: If the pass rate for a given metric is below the minimum
-        threshold and force is False.
+            threshold and force is False.
 
     Examples: TODO check
         >>> import scanpy as sc
@@ -706,24 +678,26 @@ def filter_qc_outlier_legacy(
     return k_pass
 
 
-def clusterwise_qc(ad, threshold=0.5, cell_qc_key="cell_passed_qc", key_added="cluster_passed_qc") -> None:
+def clusterwise_qc(
+    ad,
+    threshold=0.5,
+    cell_qc_key="cell_passed_qc",
+    key_added="cluster_passed_qc",
+) -> None:
     """
     Find good quality control (QC) clusters in an AnnData object.
 
     This function finds good quality control (QC) clusters in an AnnData object
-    by identifying clusters that have a high proportion of cells that pass the 
+    by identifying clusters that have a high proportion of cells that pass the
     QC filter.
 
     Args:
-        ad: AnnData object to find good QC clusters in. Needs qc_cluster 
-        present in obs.
-
-        threshold: Clusters featuring at least this fraction of good QC cells 
-        will be deemed good QC clusters.
-
-        cell_qc_key: Key to use to retrieve per-cell QC calls from obs in the 
-        AnnData.
-
+        ad: AnnData object to find good QC clusters in. Needs qc_cluster
+            present in obs.
+        threshold: Clusters featuring at least this fraction of good QC cells
+            will be deemed good QC clusters.
+        cell_qc_key: Key to use to retrieve per-cell QC calls from obs in the
+            AnnData.
         key_added: Key to use for storing the results in the AnnData obs object.
 
     Returns:
@@ -770,9 +744,8 @@ def get_good_sized_batch(batches, min_size=10) -> list:
 
     Args:
         batches: Pandas Series of batch IDs and their corresponding sizes.
-
         min_size: Minimum size of batches to include in the output list. Default
-        is 10.
+            is 10.
 
     Returns:
         List of batch IDs with a size greater than or equal to `min_size`.
@@ -823,75 +796,50 @@ def simple_default_pipeline(
 
     Args:
         adata: AnnData object to preprocess.
-
         filter_only: If True, only performs filtering steps and returns the
-        filtered AnnData object.
-
+            filtered AnnData object.
         post_filter_only: If True, only performs post-filtering steps and
-        returns the processed AnnData object.
-
+            returns the processed AnnData object.
         norm_only: If True, only performs normalization steps and returns the
-        normalized AnnData object.
-
+            normalized AnnData object.
         post_norm_only: If True, only performs post-normalization steps and
-        returns the processed AnnData object.
-
+            returns the processed AnnData object.
         hvg_only: If True, only performs highly variable gene selection and
-        returns the selected AnnData object.
-
+            returns the selected AnnData object.
         post_hvg_only: If True, only performs post-highly variable gene
-        selection steps and returns the processed AnnData object.
-
+            selection steps and returns the processed AnnData object.
         pca_only: If True, only performs PCA and returns the PCA-transformed
-        AnnData object.
-
+            AnnData object.
         post_pca_only: If True, only performs post-PCA steps and returns the
-        processed AnnData object.
-
+            processed AnnData object.
         do_clustering: If True, performs clustering and updates the AnnData
-        object with the clustering results.
-
+            object with the clustering results.
         zero_center: If True, centers the data to zero mean before scaling. If
-        None, uses a heuristic based on the number of cells.
-
+            None, uses a heuristic based on the number of cells.
         do_combat: If True and `batch` is not None, performs batch correction
-        using ComBat.
-
+            using ComBat.
         batch: The batch variable(s) to use for batch correction. If None, no
-        batch correction is performed.
-
+            batch correction is performed.
         batch_method: The batch correction method to use. Can be "harmony" or
-        "bbknn".
-
+            "bbknn".
         random_state: The random seed to use for reproducibility.
-
         clustering_resolution: The clustering resolution(s) to use for Leiden
-        clustering.
-
+            clustering.
         use_gpu: If True, uses the GPU for some computations. If "all", uses the
-        GPU for all computations.
-
+            GPU for all computations.
         use_hvg: The list of highly variable genes to use for normalization and
-        PCA. If None, uses the default Seurat v3 HVG selection.
-
+            PCA. If None, uses the default Seurat v3 HVG selection.
         filter_kw: Additional keyword arguments to pass to the
-        `filter_qc_outlier_legacy` function.
-
+            `filter_qc_outlier_legacy` function.
         hvg_kw: Additional keyword arguments to pass to the `hvg` function.
-
         rgs_kw: Additional keyword arguments to pass to the `sc.pp.regress_out`
-        function.
-
+            function.
         pca_kw: Additional keyword arguments to pass to the `pca` function.
-
         nb_kw: Additional keyword arguments to pass to the `sc.pp.neighbors`
-        function.
-
+            function.
         umap_kw: Additional keyword arguments to pass to the `umap` function.
-
         hm_kw: Additional keyword arguments to pass to the `run_harmony`
-        function.
-
+            function.
         bk_kw: Additional keyword arguments to pass to the `run_bbknn` function.
 
     Returns:
@@ -1091,20 +1039,14 @@ def recluster_subset(
 
     Args:
         adata: AnnData object to recluster.
-
         groupby: Categorical variable to group cells by.
-
         groups: List of group names to recluster.
-
         res: Clustering resolution to use for Leiden clustering.
-
         new_key: Name of the new categorical variable to add to the AnnData
-        object.
-
+            object.
         ad_aux: Optional preprocessed AnnData object to use for clustering.
-
         **kwargs: Additional keyword arguments to pass to the
-        *`simple_default_pipeline` function.
+            :py:func:`simple_default_pipeline` function.
 
     Returns:
         If `ad_aux` is not provided, the preprocessed AnnData object used for
@@ -1163,24 +1105,16 @@ def auto_zoom_in(
 
     Args:
         ad: AnnData object to cluster.
-
         use_graph: Name of the graph to use for clustering.
-
         groupby: Name of the categorical variable to start clustering from.
-
         restrict_to: Optional list of group names to restrict clustering to.
-
         start_index: Index to start numbering new categorical variables from.
-
         min_res: Minimum clustering resolution to use.
-
         max_res: Maximum clustering resolution to use.
-
         leiden_kw: Additional keyword arguments to pass to the `leiden`
-        function.
-
+            function.
         marker_kw: Additional keyword arguments to pass to the
-        `filter_marker_stats` function.
+            :py:func:`filter_marker_stats` function.
 
     Returns:
         None.
@@ -1284,51 +1218,35 @@ def custom_pipeline(
 
     Args:
         adata: AnnData object to apply the pipeline to.
-
         qc_only: If True, only perform quality control and skip the rest of the
-        pipeline.
-
+            pipeline.
         plot: If True, generate plots of the pipeline results.
-
         batch: Categorical variable to correct for batch effects.
-
         filter_params: Dictionary of filtering parameters to pass to the
-        `sc.pp.filter_cells` and `sc.pp.filter_genes` functions.
-
+            `sc.pp.filter_cells` and `sc.pp.filter_genes` functions.
         norm_params: Dictionary of normalization parameters to pass to the
-        `sc.pp.normalize_total` function.
-
+            `sc.pp.normalize_total` function.
         combat_args: Dictionary of batch correction parameters to pass to the
-        `sc.pp.combat` function.
-
+            `sc.pp.combat` function.
         hvg_params: Dictionary of highly variable gene selection parameters to
-        pass to the `hvg` function.
-
+            pass to the `hvg` function.
         scale_params: Dictionary of scaling parameters to pass to the
-        `sc.pp.scale` function.
-
+            `sc.pp.scale` function.
         pca_params: Dictionary of PCA parameters to pass to the `pca` function.
-
         harmony_params: Dictionary of Harmony parameters to pass to the
-        `run_harmony` function.
-
+            `run_harmony` function.
         nb_params: Dictionary of nearest neighbor parameters to pass to the
-        `neighbors` function.
-
+            `neighbors` function.
         umap_params: Dictionary of UMAP parameters to pass to the `umap`
-        function.
-
+            function.
         tsne_params: Dictionary of t-SNE parameters to pass to the `tsne`
-        function.
-
+            function.
         diffmap_params: Dictionary of diffusion map parameters to pass to the
-        `diffmap` function.
-
+            `diffmap` function.
         leiden_params: Dictionary of Leiden clustering parameters to pass to the
-        `leiden` function.
-
+            `leiden` function.
         fdg_params: Dictionary of force-directed graph parameters to pass to the
-        `fdg` function.
+            `fdg` function.
 
     Returns:
         The modified AnnData object.
@@ -1445,20 +1363,15 @@ def save_pipeline_object(
 
     Args:
         ad: AnnData object to save.
-
         out_prefix: Prefix for the output file name. If None, no file is saved.
-
         batch_method: Batch correction method used to process the AnnData
-        object. Can be "harmony", "bbknn", or None.
-
+            object. Can be "harmony", "bbknn", or None.
         obs_keys: List of keys to remove from the `obs` attribute of the AnnData
-        object.
-
+            object.
         obsm_keys: List of keys to remove from the `obsm` attribute of the
-        AnnData object.
-
+            AnnData object.
         uns_keys: List of keys to remove from the `uns` attribute of the AnnData
-        object.
+            object.
 
     Returns:
         The processed AnnData object.
@@ -1533,29 +1446,21 @@ def integrate(
 
     Args:
         ads: List of AnnData objects to integrate.
-
         ad_prefices: List of prefixes to use for the batch categories in the
-        concatenated object. If not provided, uses integers starting from 0.
-
+            concatenated object. If not provided, uses integers starting from 0.
         ad_types: List of types to use for each AnnData object. If not provided,
-        attempts to automatically determine the type of each object.
-
+            attempts to automatically determine the type of each object.
         annotations: List of annotation columns to use for each AnnData object.
-        If not provided, uses the default "annot" column.
-
+            If not provided, uses the default "annot" column.
         batches: List of batch columns to use for each AnnData object. If not
-        provided, uses the default "batch" column.
-
+            provided, uses the default "batch" column.
         join: Method to use for joining the AnnData objects. Can be "inner"
-        (default) or "outer".
-
+            (default) or "outer".
         n_hvg: Number of highly variable genes to select for each batch.
-
         pool_only: If True, returns the concatenated object without performing
-        downstream analysis.
-
+            downstream analysis.
         normalize: If True, normalizes the expression data in each AnnData
-        object before concatenating.
+            object before concatenating.
 
     Returns:
         If `pool_only` is True, the concatenated AnnData object. Otherwise, the
@@ -1694,12 +1599,10 @@ def crossmap(adata, dataset="dataset", annotation="annot"):
 
     Args:
         adata: AnnData object to cross-map annotations in.
-
         dataset: Name of the categorical variable to group cells by. Default is
-        "dataset".
-
+            "dataset".
         annotation: Name of the categorical variable to cross-map. Default is
-        "annot".
+            "annot".
 
     Returns:
         If the annotations have already been cross-mapped, a pandas DataFrame
@@ -1774,23 +1677,23 @@ def auto_filter_cells(
     variable indicating which cells passed the filters.
 
     Args:
-        ad: AnnData object to filter cells in.
-
-        min_count: Minimum number of counts per cell to retain. Default is 250.
-
-        min_gene: Minimum number of genes per cell to retain. Default is 50.
-
-        subset: Whether to return a subset of the original AnnData object
-        containing only the passing cells. Default is True.
-
-        filter_kw: Dictionary of keyword arguments to pass to the
-        `simple_default_pipeline` function. Default is a set of default filter
-        parameters.
+        ad (anndata.AnnData): AnnData object to filter cells in.
+        min_count (int): Minimum number of counts per cell to retain. Default is 250.
+        min_gene (int): Minimum number of genes per cell to retain. Default is 50.
+        subset (bool): Whether to return a subset of the original AnnData object
+            containing only the passing cells. Default is True.
+        filter_kw (dict): Dictionary of keyword arguments to pass to the
+            :py:func:`simple_default_pipeline` function. Default is a set of
+            default filter parameters.
 
     Returns:
         If `subset` is True, a new AnnData object containing only the passing
         cells. Otherwise, the original AnnData object with a new categorical
         variable indicating which cells passed the filters.
+
+    Raises:
+        QcLowPassError: If dataset does not pass minimum specifications.
+
     """
     filter_kw = filter_kw.copy()
     while True:
