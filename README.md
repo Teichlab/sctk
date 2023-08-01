@@ -15,15 +15,15 @@
 ## Installation
 
 ```bash
-pip install git+https://github.com/Teichlab/sctk.git
+pip install sctk
 ```
 
-It is recommended to install sctk into a fresh python 3.9 virtual environment due to its large amount of dependencies. If you encounter a dependency conflict when installing into a fresh environment, try updating pip:
+If you encounter dependency clashes, create a fresh python 3.9 virtual environment (e.g. via conda) and install SCTK there. It may also help to update pip:
 
 ```bash
 pip install --upgrade pip
 ```
 
-## Usage
+## Usage and Documentation
 
-An example of applying the automatic QC workflow can be found in the [demo notebook](notebooks/automatic_qc.ipynb).
+SCTK's documentation is available [here](https://teichlab.github.io/sctk/), and features a tutorial and API reference for the automated QC workflow.

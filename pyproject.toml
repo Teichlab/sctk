@@ -9,6 +9,8 @@ authors = [
 ]
 license = "GPL-3.0"
 readme = "README.md"
+homepage = "https://github.com/Teichlab/sctk"
+documentation = "https://teichlab.github.io/sctk/"
 
 [tool.poetry.dependencies]
 python = "^3.9"
