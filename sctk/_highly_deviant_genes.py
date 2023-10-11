@@ -1,5 +1,4 @@
 from typing import Optional
-from scanpy._compat import Literal
 from anndata import AnnData
 from scanpy import logging as logg
 
@@ -141,7 +140,7 @@ def compute_deviance(Y, flavor='poisson', chunksize=1e8, n_jobs=None):
 def highly_deviant_genes(
     adata: AnnData,
     layer: Optional[str] = None,
-    flavor: Literal['poisson', 'binomial'] = 'poisson',
+    flavor: Optional[str] = 'poisson',
     alpha: Optional[float] = 0.05,
     n_top_genes: Optional[int] = None,
     chunksize: Optional[int] = 1e8,
