@@ -5,7 +5,7 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) 
 [![CI](https://github.com/Teichlab/sctk/actions/workflows/ci-cd.yaml/badge.svg)](https://github.com/Teichlab/sctk/actions/workflows/ci-cd.yaml)
 [![Tests](https://github.com/Teichlab/sctk/actions/workflows/sphinx-autodoc.yaml/badge.svg)](https://github.com/Teichlab/sctk/actions/workflows/sphinx-autodoc.yaml)
-![Coverage](coverage.svg)
+![Coverage](https://github.com/Teichlab/sctk/tree/master/coverage.svg)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 # sctk
@@ -28,4 +28,4 @@ pip install --upgrade pip
 
 SCTK's documentation is available [here](https://teichlab.github.io/sctk/), and features a tutorial and API reference for scAutoQC (an automated QC workflow).
 
-<img src="https://github.com/Teichlab/sctk/tree/master/docs/notebooks/scautoqc_logo.png" alt="scautoqc_logo" width="200"/>
+<img src="docs/notebooks/scautoqc_logo.png" alt="scautoqc_logo" width="200"/>
