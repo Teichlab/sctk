@@ -26,4 +26,6 @@ pip install --upgrade pip
 
 ## Usage and Documentation
 
-SCTK's documentation is available [here](https://teichlab.github.io/sctk/), and features a tutorial and API reference for the automated QC workflow.
+SCTK's documentation is available [here](https://teichlab.github.io/sctk/), and features a tutorial and API reference for scAutoQC (an automated QC workflow).
+
+<img src="https://github.com/Teichlab/sctk/tree/master/docs/notebooks/scautoqc_logo.png" alt="scautoqc_logo" width="200"/>
