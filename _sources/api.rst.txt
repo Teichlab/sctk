@@ -1,8 +1,8 @@
 API Reference
 =============
 
-QC pipeline
------------
+scAutoQC
+--------
 .. module:: sctk
 .. autosummary::
    :toctree: modules
