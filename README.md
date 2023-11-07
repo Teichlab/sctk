@@ -5,7 +5,7 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) 
 [![CI](https://github.com/Teichlab/sctk/actions/workflows/ci-cd.yaml/badge.svg)](https://github.com/Teichlab/sctk/actions/workflows/ci-cd.yaml)
 [![Tests](https://github.com/Teichlab/sctk/actions/workflows/sphinx-autodoc.yaml/badge.svg)](https://github.com/Teichlab/sctk/actions/workflows/sphinx-autodoc.yaml)
-![Coverage](https://github.com/Teichlab/sctk/tree/master/coverage.svg)
+![Coverage](https://github.com/Teichlab/sctk/blob/master/coverage.svg)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 # sctk
