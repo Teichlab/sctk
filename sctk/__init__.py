@@ -99,6 +99,7 @@ from ._pipeline import (
     auto_zoom_in,
     calculate_qc,
     cellwise_qc,
+    cluster_qc_find_resolution,
     clusterwise_qc,
     crossmap,
     custom_pipeline,

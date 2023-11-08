@@ -730,7 +730,7 @@ def clusterwise_qc(
         >>> metrics_list = ["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb"]
         >>> sctk.generate_qc_clusters(adata, metrics=metrics_list)
         >>> sctk.cellwise_qc(adata)
-        >>> sctk.clusterwise_wc(adata)
+        >>> sctk.clusterwise_qc(adata)
 
     """
     if ad.obs[cell_qc_key].astype(bool).sum() == 0:
@@ -748,6 +748,101 @@ def clusterwise_qc(
         )
 
     ad.obs[key_added] = ad.obs["qc_cluster"].isin(good_qc_clusters)
+
+
+def cluster_qc_find_resolution(ad, metrics, 
+                               failed=True,
+                               res=np.arange(0.1,1.1,0.1),
+                               n_pcs=None,
+                               n_neighbors=None,
+                               threshold=0.5,
+                               cell_qc_key="cell_passed_qc",
+                               key_added="cluster_passed_qc",
+                              ) -> None:
+    """
+    Run ``generate_qc_clusters()`` and ``clusterwise_qc()`` for a number of 
+    potential resolutions. The optimal resolution is determined as the one that 
+    grants the highest Jaccard index between cell-level and cluster-level QC 
+    calls.
+    
+    Stores optimal resolution clusters and QC calls in input object.
+    
+    Args:
+        ad: AnnData object to generate QC clusters for.
+        metrics: ``generate_qc_clusters()`` argument. List of QC metrics to use 
+            for generating QC clusters. Must be present as obs columns.
+        failed: If ``True``, will maximise the Jaccard index for cell-level and 
+            cluster-level calls of cells failing QC. If ``False``, will do so 
+            for cells passing QC.
+        res: Resolution values to check the clustering of.
+        n_pcs: ``generate_qc_clusters()`` argument. Number of principal 
+            components to use for PCA. If not provided,this will be set to 
+            max(2, len(metrics) - 2).
+        n_neighbors: ``generate_qc_clusters()`` argument. Number of nearest 
+            neighbors to use for constructing the nearest neighbor graph. If not 
+            provided, this will be set to min(max(5, int(ad.n_obs / 500)), 10).
+        threshold: ``clusterwise_qc()`` argument. Clusters featuring at least 
+            this fraction of good QC cells will be deemed good QC clusters.
+        cell_qc_key: ``clusterwise_qc()`` argument. Key to use to retrieve per-
+            cell QC calls from obs in the AnnData.
+        key_added: ``clusterwise_qc()`` argument. Key to use for storing the 
+            results in the AnnData obs object.
+    
+    Returns:
+        None.
+    
+    Raises:
+        None.
+    
+    Examples:
+        >>> import scanpy as sc
+        >>> import sctk
+        >>> adata = sc.datasets.pbmc3k()
+        >>> sctk.calculate_qc(adata)
+        >>> metrics_list = ["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb"]
+        >>> sctk.cellwise_qc(adata)
+        >>> sctk.cluster_qc_find_resolution(adata, metrics=metrics_list)
+    """
+    # store the qc cluster object into a helper variable, along with the Jaccards we make
+    aux_ad = None
+    jaccards = []
+    for sres in res:
+        # compute the clusters and then get cluster-level QC calls
+        # calling with aux_ad=None in the first pass will work just fine
+        # it will generate the KNN and embedding, and then in subsequent passes skip that
+        aux_ad = generate_qc_clusters(ad, metrics, 
+                                      res=sres, 
+                                      n_pcs=n_pcs, 
+                                      n_neighbors=n_neighbors, 
+                                      aux_ad=aux_ad, 
+                                      return_aux=True
+                                     )
+        clusterwise_qc(ad, 
+                       threshold=threshold,
+                       cell_qc_key=cell_qc_key,
+                       key_added=key_added
+                      )
+        # compute Jaccard of either failed or passed cells, between cell and cluster level calls
+        if failed:
+            # true is passed, false is failed, negate so true is failed and false is passed
+            jaccards.append(np.sum(~ad.obs[cell_qc_key] & ~ad.obs[key_added])/np.sum(~ad.obs[cell_qc_key] | ~ad.obs[key_added]))
+        else:
+            jaccards.append(np.sum(ad.obs[cell_qc_key] & ad.obs[key_added])/np.sum(ad.obs[cell_qc_key] | ad.obs[key_added]))
+    # find our best Jaccard and set the output object to have the corresponding clustering
+    best_res = res[np.argmax(jaccards)]
+    print("Best overlap found for resolution "+str(best_res))
+    aux_ad = generate_qc_clusters(ad, metrics, 
+                                  res=best_res, 
+                                  n_pcs=n_pcs, 
+                                  n_neighbors=n_neighbors, 
+                                  aux_ad=aux_ad, 
+                                  return_aux=True
+                                 )
+    clusterwise_qc(ad, 
+                   threshold=threshold,
+                   cell_qc_key=cell_qc_key,
+                   key_added=key_added
+                  )
 
 
 def get_good_sized_batch(batches, min_size=10) -> list:
