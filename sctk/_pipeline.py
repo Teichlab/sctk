@@ -363,6 +363,19 @@ def fit_gaussian(
     return x_left, x_right, gmm
 
 
+# default values for cellwise_qc
+default_metric_params_df = pd.DataFrame([(1000, None, "log", "min_only", 0.1),
+    (100, None, "log", "min_only", 0.1),
+    (0.01, 20, "log", "max_only", 0.1),
+    (0, 100, "log", "both", 0.1),
+    (None, 1, "log", "max_only", 0.1),
+    (None, 5, "log", "max_only", 0.1),
+    (50, 97.5, "log", "both", 0.1),
+    (None, 0.3, "linear", "max_only", 0.95)],
+    index = ["n_counts", "n_genes", "percent_mito", "percent_ribo", "percent_hb", "percent_soup", "percent_spliced", "scrublet_score"],
+    columns = ["min", "max", "scale", "side", "min_pass_rate"]
+)
+
 def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
     """
     Filter cells in an AnnData object based on quality control metrics. The
@@ -398,19 +411,22 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
         >>> sctk.calculate_qc(adata)
         >>> sctk.cellwise_qc(adata)
     """
-    default_metric_params = {
-        "n_counts": (1000, None, "log", "min_only", 0.1),
-        "n_genes": (100, None, "log", "min_only", 0.1),
-        "percent_mito": (0.01, 20, "log", "max_only", 0.1),
-        "percent_ribo": (0, 100, "log", "both", 0.1),
-        "percent_hb": (None, 1, "log", "max_only", 0.1),
-        "percent_soup": (None, 5, "log", "max_only", 0.1),
-        "percent_spliced": (50, 97.5, "log", "both", 0.1),
-        "scrublet_score": (None, 0.3, "linear", "max_only", 0.95),
-    }
+    # while it is more convenient to pass input as a data frame
+    # Ni's code expects the QC info as a dictionary with five values per measure
+    # and any purposefully absent values as None, whereas pandas uses NaNs
+    # as such, turn the NaNs to Nones, and then turn the df to a dict of five-element lists
+    # need to transpose the df prior to the dict'ing as the dict'ing operates on columns
+    # meanwhile we want a per-row dict
+    default_metric_params = default_metric_params_df.replace({np.nan: None}).T.to_dict(orient="list")
     if metrics is None:
         metric_params = default_metric_params
+    elif isinstance(metrics, pd.DataFrame):
+        # our most likely use case if not empty - the user gave us a df
+        # transform like the defaults from earlier after sorting the columns
+        metric_params = metrics.loc[:, ["min", "max", "scale", "side", "min_pass_rate"]].replace({np.nan: None}).T.to_dict(orient="list")
     elif isinstance(metrics, (list, tuple)):
+        # the other two are legacy input formatting from Ni's original code
+        # keep just in case somebody uses it like this and won't change
         metric_params = {
             k: v for k, v in default_metric_params.items() if k in metrics
         }
@@ -420,8 +436,8 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
         metric_params = metrics
     else:
         raise ValueError(
-            "`metrics` must be a list/tuple of metric names or a dict of"
-            " <name>: [<min>, <max>, <scale>, <sidedness>, <min_pass_rate>]"
+            "`metrics` should be a data frame with the following col names:"
+            " `[min, max, scale, side, min_pass_rate]` and rows for QC measures in `.obs`"
         )
 
     n_obs = adata.n_obs

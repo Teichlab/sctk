@@ -107,4 +107,5 @@ from ._pipeline import (
     integrate,
     recluster_subset,
     simple_default_pipeline,
+    default_metric_params_df,
 )
