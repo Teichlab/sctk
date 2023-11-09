@@ -376,7 +376,7 @@ default_metric_params_df = pd.DataFrame([(1000, None, "log", "min_only", 0.1),
     columns = ["min", "max", "scale", "side", "min_pass_rate"]
 )
 
-def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
+def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", uns_qc_key="scautoqc_ranges", **kwargs):
     """
     Filter cells in an AnnData object based on quality control metrics. The
     object is modified in-place.
@@ -394,6 +394,7 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
             uses a set of default metrics. For defaults and an explanation, please
             refer to the QC workflow demo notebook.
         cell_qc_key: Obs column in the object to store the per-cell QC calls in.
+        uns_qc_key: Uns key to store the determined QC ranges used in filtering.
         **kwargs: Additional keyword arguments to pass to the
             :py:func:`fit_gaussian` function.
 
@@ -442,6 +443,7 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
 
     n_obs = adata.n_obs
 
+    range_df = pd.DataFrame(columns=["low","high"])
     pass_filter = {}
     for m, v in metric_params.items():
         min_x, max_x, scale, side, min_pass_rate = v
@@ -481,12 +483,16 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", **kwargs):
         print(
             f"{m}: [{x_low_str}, {x_high_str}], {pass_filter[m].sum()}/{n_obs} passed"
         )
+        # stash the identified ranges in the df
+        range_df.loc[m, "low"] = x_low_str
+        range_df.loc[m, "high"] = x_high_str
 
     all_passed = np.ones(n_obs).astype(bool)
     for m, k_pass in pass_filter.items():
         all_passed = all_passed & k_pass
     print(f"{all_passed.sum()}/{n_obs} pass")
     adata.obs[cell_qc_key] = all_passed
+    adata.uns[uns_qc_key] = range_df
     if adata.obs[cell_qc_key].sum() == 0:
         print(
             "No cells passed. Performing simple filtering on counts, genes and mito%"
