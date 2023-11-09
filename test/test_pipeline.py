@@ -22,7 +22,7 @@ from sklearn.mixture import GaussianMixture
 
 def test_calculate_qc():
     # create test data
-    adata = sc.datasets.pbmc68k_reduced()
+    adata = sc.datasets.pbmc3k()
 
     # test that calculate_qc adds expected columns to adata.obs and adata.var
     calculate_qc(adata)
@@ -39,7 +39,7 @@ def test_calculate_qc():
 
 def test_generate_qc_clusters():
     # create test data
-    adata = sc.datasets.pbmc68k_reduced()
+    adata = sc.datasets.pbmc3k()
 
     # test that generate_qc_clusters adds expected columns to adata.obs and adata.obsm
     calculate_qc(adata)
@@ -76,9 +76,10 @@ def test_fit_gaussian():
 
 def test_cellwise_qc():
     # Load example dataset
-    adata = sc.datasets.pbmc68k_reduced()
+    adata = sc.datasets.pbmc3k()
 
     # Test default metrics
+    calculate_qc(adata)
     cellwise_qc(adata)
     assert "cell_passed_qc" in adata.obs.columns
 
