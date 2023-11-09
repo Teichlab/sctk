@@ -118,7 +118,7 @@
 <h1>sctk.clusterwise_qc<a class="headerlink" href="#sctk-clusterwise-qc" title="Permalink to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="sctk.clusterwise_qc">
-<span class="sig-prename descclassname"><span class="pre">sctk.</span></span><span class="sig-name descname"><span class="pre">clusterwise_qc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_qc_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cell_passed_qc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_added</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cluster_passed_qc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#sctk.clusterwise_qc" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sctk.</span></span><span class="sig-name descname"><span class="pre">clusterwise_qc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clus_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qc_cluster'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_qc_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cell_passed_qc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_added</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cluster_passed_qc'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#sctk.clusterwise_qc" title="Permalink to this definition"></a></dt>
 <dd><p>Find good quality control (QC) clusters in an AnnData object.</p>
 <p>This function finds good quality control (QC) clusters in an AnnData object
 by identifying clusters that have a high proportion of cells that pass the
@@ -130,6 +130,8 @@ QC filter.</p>
 present in obs.</p></li>
 <li><p><strong>threshold</strong> – Clusters featuring at least this fraction of good QC cells
 will be deemed good QC clusters.</p></li>
+<li><p><strong>clus_key</strong> – Key to use to retrieve the QC clusters from obs in the
+AnnData.</p></li>
 <li><p><strong>cell_qc_key</strong> – Key to use to retrieve per-cell QC calls from obs in the
 AnnData.</p></li>
 <li><p><strong>key_added</strong> – Key to use for storing the results in the AnnData obs object.</p></li>
