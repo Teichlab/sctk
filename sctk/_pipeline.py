@@ -427,6 +427,10 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", uns_qc_key="s
         metric_params = default_metric_params
     elif isinstance(metrics, pd.DataFrame):
         # our most likely use case if not empty - the user gave us a df
+        # check that we have all the necessary columns
+        missing_columns = list(set(["min", "max", "scale", "side", "min_pass_rate"]).difference(set(metrics.columns)))
+        if len(missing_columns) > 0:
+            raise ValueError("`metrics` is missing the required column(s): "+",".join(missing_columns))
         # transform like the defaults from earlier after sorting the columns
         metric_params = metrics.loc[:, ["min", "max", "scale", "side", "min_pass_rate"]].replace({np.nan: None}).T.to_dict(orient="list")
     elif isinstance(metrics, (list, tuple)):
