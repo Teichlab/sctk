@@ -138,6 +138,8 @@ def generate_qc_clusters(
     n_pcs=None,
     n_neighbors=None,
     res=0.2,
+    clus_key="qc_cluster",
+    umap_key="X_umap_qc",
     return_aux=False,
 ) -> anndata.AnnData:
     """
@@ -163,6 +165,8 @@ def generate_qc_clusters(
             nearest neighbor graph. If not provided, this will be set to min(max(5,
             int(ad.n_obs / 500)), 10).
         res: Resolution parameter to use for the Leiden clustering algorithm.
+        clus_key: Obs column to store the QC clusters in.
+        umap_key: Obsm key to store the QC UMAP coordinates in.
         return_aux: If True, return the auxiliary AnnData object used for
             generating QC clusters.
 
@@ -195,8 +199,8 @@ def generate_qc_clusters(
         sc.pp.neighbors(aux_ad, n_neighbors=n_neighbors)
         sc.tl.umap(aux_ad, min_dist=0.1)
     sc.tl.leiden(aux_ad, resolution=res, key_added="qc_cluster")
-    ad.obs["qc_cluster"] = aux_ad.obs.qc_cluster
-    ad.obsm["X_umap_qc"] = aux_ad.obsm["X_umap"]
+    ad.obs[clus_key] = aux_ad.obs.qc_cluster
+    ad.obsm[umap_key] = aux_ad.obsm["X_umap"]
     if return_aux:
         return aux_ad
 
@@ -703,6 +707,7 @@ def filter_qc_outlier_legacy(
 def clusterwise_qc(
     ad,
     threshold=0.5,
+    clus_key="qc_cluster",
     cell_qc_key="cell_passed_qc",
     key_added="cluster_passed_qc",
 ) -> None:
@@ -718,6 +723,8 @@ def clusterwise_qc(
             present in obs.
         threshold: Clusters featuring at least this fraction of good QC cells
             will be deemed good QC clusters.
+        clus_key: Key to use to retrieve the QC clusters from obs in the 
+            AnnData.
         cell_qc_key: Key to use to retrieve per-cell QC calls from obs in the
             AnnData.
         key_added: Key to use for storing the results in the AnnData obs object.
@@ -744,7 +751,7 @@ def clusterwise_qc(
     else:
         good_qc_clusters = (
             pd.crosstab(
-                ad.obs.qc_cluster,
+                ad.obs[clus_key],
                 ad.obs[cell_qc_key].astype("category"),
                 normalize="index",
             )
@@ -753,7 +760,7 @@ def clusterwise_qc(
             .index.tolist()
         )
 
-    ad.obs[key_added] = ad.obs["qc_cluster"].isin(good_qc_clusters)
+    ad.obs[key_added] = ad.obs[clus_key].isin(good_qc_clusters)
 
 
 def cluster_qc_find_resolution(ad, metrics, 
@@ -762,6 +769,8 @@ def cluster_qc_find_resolution(ad, metrics,
                                n_pcs=None,
                                n_neighbors=None,
                                threshold=0.5,
+                               clus_key="qc_cluster",
+                               umap_key="X_umap_qc",
                                cell_qc_key="cell_passed_qc",
                                key_added="cluster_passed_qc",
                               ) -> None:
@@ -789,6 +798,9 @@ def cluster_qc_find_resolution(ad, metrics,
             provided, this will be set to min(max(5, int(ad.n_obs / 500)), 10).
         threshold: ``clusterwise_qc()`` argument. Clusters featuring at least 
             this fraction of good QC cells will be deemed good QC clusters.
+        clus_key: Obs column to store the QC clusters in.
+        umap_key: ``generate_qc_clusters()`` argument. Obsm key to store the QC 
+            UMAP coordinates in.
         cell_qc_key: ``clusterwise_qc()`` argument. Key to use to retrieve per-
             cell QC calls from obs in the AnnData.
         key_added: ``clusterwise_qc()`` argument. Key to use for storing the 
@@ -820,11 +832,14 @@ def cluster_qc_find_resolution(ad, metrics,
                                       res=sres, 
                                       n_pcs=n_pcs, 
                                       n_neighbors=n_neighbors, 
+                                      clus_key=clus_key, 
+                                      umap_key=umap_key, 
                                       aux_ad=aux_ad, 
                                       return_aux=True
                                      )
         clusterwise_qc(ad, 
                        threshold=threshold,
+                       clus_key=clus_key,
                        cell_qc_key=cell_qc_key,
                        key_added=key_added
                       )
@@ -841,11 +856,14 @@ def cluster_qc_find_resolution(ad, metrics,
                                   res=best_res, 
                                   n_pcs=n_pcs, 
                                   n_neighbors=n_neighbors, 
+                                  clus_key=clus_key, 
+                                  umap_key=umap_key, 
                                   aux_ad=aux_ad, 
                                   return_aux=True
                                  )
     clusterwise_qc(ad, 
                    threshold=threshold,
+                   clus_key=clus_key,
                    cell_qc_key=cell_qc_key,
                    key_added=key_added
                   )
