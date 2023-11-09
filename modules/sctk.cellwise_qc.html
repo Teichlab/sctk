@@ -118,7 +118,7 @@
 <h1>sctk.cellwise_qc<a class="headerlink" href="#sctk-cellwise-qc" title="Permalink to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="sctk.cellwise_qc">
-<span class="sig-prename descclassname"><span class="pre">sctk.</span></span><span class="sig-name descname"><span class="pre">cellwise_qc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_qc_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cell_passed_qc'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctk.cellwise_qc" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sctk.</span></span><span class="sig-name descname"><span class="pre">cellwise_qc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_qc_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cell_passed_qc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uns_qc_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'scautoqc_ranges'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctk.cellwise_qc" title="Permalink to this definition"></a></dt>
 <dd><p>Filter cells in an AnnData object based on quality control metrics. The
 object is modified in-place.</p>
 <p>This function filters cells in an AnnData object based on quality control
@@ -135,6 +135,7 @@ names and their corresponding parameters. If not provided, the function
 uses a set of default metrics. For defaults and an explanation, please
 refer to the QC workflow demo notebook.</p></li>
 <li><p><strong>cell_qc_key</strong> – Obs column in the object to store the per-cell QC calls in.</p></li>
+<li><p><strong>uns_qc_key</strong> – Uns key to store the determined QC ranges used in filtering.</p></li>
 <li><p><strong>**kwargs</strong> – Additional keyword arguments to pass to the
 <code class="xref py py-func docutils literal notranslate"><span class="pre">fit_gaussian()</span></code> function.</p></li>
 </ul>
