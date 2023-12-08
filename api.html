@@ -124,14 +124,17 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="modules/sctk.calculate_qc.html#sctk.calculate_qc" title="sctk.calculate_qc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_qc</span></code></a>(adata[, flags, extra_flags, ...])</p></td>
 <td><p>Calculate quality control (QC) metrics for an AnnData object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="modules/sctk.generate_qc_clusters.html#sctk.generate_qc_clusters" title="sctk.generate_qc_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_qc_clusters</span></code></a>(ad, metrics[, aux_ad, ...])</p></td>
-<td><p>Generate quality control (QC) clusters for an AnnData object.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="modules/sctk.cellwise_qc.html#sctk.cellwise_qc" title="sctk.cellwise_qc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellwise_qc</span></code></a>(adata[, metrics, cell_qc_key, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="modules/sctk.cellwise_qc.html#sctk.cellwise_qc" title="sctk.cellwise_qc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cellwise_qc</span></code></a>(adata[, metrics, cell_qc_key, ...])</p></td>
 <td><p>Filter cells in an AnnData object based on quality control metrics.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="modules/sctk.generate_qc_clusters.html#sctk.generate_qc_clusters" title="sctk.generate_qc_clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_qc_clusters</span></code></a>(ad, metrics[, aux_ad, ...])</p></td>
+<td><p>Generate quality control (QC) clusters for an AnnData object.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="modules/sctk.clusterwise_qc.html#sctk.clusterwise_qc" title="sctk.clusterwise_qc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clusterwise_qc</span></code></a>(ad[, threshold, clus_key, ...])</p></td>
 <td><p>Find good quality control (QC) clusters in an AnnData object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="modules/sctk.multi_resolution_cluster_qc.html#sctk.multi_resolution_cluster_qc" title="sctk.multi_resolution_cluster_qc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">multi_resolution_cluster_qc</span></code></a>(ad, metrics[, ...])</p></td>
+<td><p>Run <code class="docutils literal notranslate"><span class="pre">generate_qc_clusters()</span></code> and <code class="docutils literal notranslate"><span class="pre">clusterwise_qc()</span></code> for a number of potential resolutions.</p></td>
 </tr>
 </tbody>
 </table>

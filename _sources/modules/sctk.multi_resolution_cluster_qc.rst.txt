@@ -1,0 +1,6 @@
+﻿sctk.multi\_resolution\_cluster\_qc
+===================================
+
+.. currentmodule:: sctk
+
+.. autofunction:: multi_resolution_cluster_qc

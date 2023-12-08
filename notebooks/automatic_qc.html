@@ -6,12 +6,12 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="notebooks/automatic_qc.html" />
 <meta property="og:site_name" content="sctk" />
-<meta property="og:description" content="scautoqc_logo This notebook will show how to apply SCTK’s automatic QC workflow, scAutoQC. The process has four steps: sctk.calculate_qc() computes QC measures, sctk.generate_qc_clusters() creates ..." />
+<meta property="og:description" content="scautoqc_logo This notebook will show how to apply SCTK’s automatic QC workflow, scAutoQC. The process has four steps: sctk.calculate_qc() computes QC measures, sctk.cellwise_qc() performs cell-lev..." />
 <meta property="og:image:width" content="1146" />
 <meta property="og:image:height" content="600" />
 <meta property="og:image" content="/_images/social_previews/summary_notebooks_automatic_qc_19a544ec.png" />
 <meta property="og:image:alt" content="scautoqc_logo This notebook will show how to apply SCTK’s automatic QC workflow, scAutoQC. The process has four steps: sctk.calculate_qc() computes QC measur..." />
-<meta name="description" content="scautoqc_logo This notebook will show how to apply SCTK’s automatic QC workflow, scAutoQC. The process has four steps: sctk.calculate_qc() computes QC measures, sctk.generate_qc_clusters() creates ..." />
+<meta name="description" content="scautoqc_logo This notebook will show how to apply SCTK’s automatic QC workflow, scAutoQC. The process has four steps: sctk.calculate_qc() computes QC measures, sctk.cellwise_qc() performs cell-lev..." />
 <meta name="twitter:card" content="summary_large_image" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -386,11 +386,17 @@ div.rendered_html tbody tr:hover {
 <p>This notebook will show how to apply SCTK’s automatic QC workflow, scAutoQC. The process has four steps:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">sctk.calculate_qc()</span></code> computes QC measures</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sctk.generate_qc_clusters()</span></code> creates QC-space clusters of cells</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> performs cell-level QC calling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sctk.generate_qc_clusters()</span></code> creates QC-space clusters of cells</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sctk.clusterwise_qc()</span></code> computes cluster-wide statistics of cell quality</p></li>
 </ul>
-<p>Let’s use Scanpy’s PBMC object as input.</p>
+<p>It is recommended to run scAutoQC on a per-sample basis. The workflow offers a utility function <code class="docutils literal notranslate"><span class="pre">sctk.multi_resolution_cluster_qc()</span></code> to attempt clustering with multiple resolutions and draw broader automated conclusions, which is likely to be of use when faced with multiple samples to process. This leads to a simplified analysis flow of:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">calculate_qc</span><span class="p">()</span>
+<span class="n">sctk</span><span class="o">.</span><span class="n">cellwise_qc</span><span class="p">()</span>
+<span class="n">sctk</span><span class="o">.</span><span class="n">multi_resolution_cluster_qc</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Let’s take a closer look at what each step in the process does, using Scanpy’s PBMC object as input.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -432,67 +438,9 @@ AnnData object with n_obs × n_vars = 2700 × 32738
 </pre></div></div>
 </div>
 <p>You can see the <code class="docutils literal notranslate"><span class="pre">.obs</span></code> of the object populated with the QC measures we just generated.</p>
-<p>The second step of the QC workflow is to cluster the cells based on specified metrics, performing a quick Scanpy analysis using the metrics as features. This creates groups of cells that have similar QC profiles.</p>
+<p>The second step of the scAutoQC workflow involves determining which of the cells pass QC individually.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#present as columns in obs of the object</span>
-<span class="n">metrics_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;log1p_n_counts&quot;</span><span class="p">,</span> <span class="s2">&quot;log1p_n_genes&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_mito&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_ribo&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_hb&quot;</span><span class="p">]</span>
-<span class="n">sctk</span><span class="o">.</span><span class="n">generate_qc_clusters</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics_list</span><span class="p">)</span>
-<span class="n">adata</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-/home/jovyan/my-conda-envs/sctk/lib/python3.9/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
-  from .autonotebook import tqdm as notebook_tqdm
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-AnnData object with n_obs × n_vars = 2700 × 32738
-    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;qc_cluster&#39;
-    var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
-    obsm: &#39;X_umap_qc&#39;
-</pre></div></div>
-</div>
-<p>There’s now an <code class="docutils literal notranslate"><span class="pre">.obs</span></code> column called <code class="docutils literal notranslate"><span class="pre">qc_cluster</span></code>, and an embedding called <code class="docutils literal notranslate"><span class="pre">X_umap_qc</span></code>. Let’s take a look!</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="s2">&quot;X_umap_qc&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;qc_cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;log1p_n_counts&quot;</span><span class="p">],</span> <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;OrRd&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-/home/jovyan/my-conda-envs/sctk/lib/python3.9/site-packages/scanpy/plotting/_tools/scatterplots.py:392: UserWarning: No data for colormapping provided via &#39;c&#39;. Parameters &#39;cmap&#39; will be ignored
-  cax = scatter(
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/notebooks_automatic_qc_10_1.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_10_1.png" style="width: 667px; height: 299px;" />
-</div>
-</div>
-<p>The next step of the scAutoQC workflow involves determining which of the cells pass QC individually.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">cellwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
@@ -515,21 +463,20 @@ percent_hb: [0.0, 0.002321736026317521], 2375/2700 passed
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 AnnData object with n_obs × n_vars = 2700 × 32738
-    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;qc_cluster&#39;, &#39;cell_passed_qc&#39;
+    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;cell_passed_qc&#39;
     var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
-    uns: &#39;qc_cluster_colors&#39;
-    obsm: &#39;X_umap_qc&#39;
+    uns: &#39;scautoqc_ranges&#39;
 </pre></div></div>
 </div>
 <p>There’s now a <code class="docutils literal notranslate"><span class="pre">cell_passed_qc</span></code> column in <code class="docutils literal notranslate"><span class="pre">.obs</span></code> which features per-cell QC calls.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;cell_passed_qc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
@@ -537,7 +484,7 @@ AnnData object with n_obs × n_vars = 2700 × 32738
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -545,43 +492,287 @@ AnnData object with n_obs × n_vars = 2700 × 32738
 2184
 </pre></div></div>
 </div>
-<p>Controlling the desired QC thresholds requires a bit of explanation.</p>
-<p>Under the hood, <code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> models each of the specified QC metrics as a Gaussian mixture model, with the model proposing possible low and high value cutoffs at points where the probability density function of the mixture falls below a threshold (0.05 by default). The function is written to allow robust filtering, requiring a specific formatting of <code class="docutils literal notranslate"><span class="pre">metrics</span></code>. The default values are:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>metrics = {
-    &quot;n_counts&quot;: (1000, None, &quot;log&quot;, &quot;min_only&quot;, 0.1),
-    &quot;n_genes&quot;: (100, None, &quot;log&quot;, &quot;min_only&quot;, 0.1),
-    &quot;percent_mito&quot;: (0.01, 20, &quot;log&quot;, &quot;max_only&quot;, 0.1),
-    &quot;percent_ribo&quot;: (0, 100, &quot;log&quot;, &quot;both&quot;, 0.1),
-    &quot;percent_hb&quot;: (None, 1, &quot;log&quot;, &quot;max_only&quot;, 0.1),
-    &quot;percent_soup&quot;: (None, 5, &quot;log&quot;, &quot;max_only&quot;, 0.1),
-    &quot;percent_spliced&quot;: (50, 97.5, &quot;log&quot;, &quot;both&quot;, 0.1),
-    &quot;scrublet_score&quot;: (None, 0.3, &quot;linear&quot;, &quot;max_only&quot;, 0.95),
-}
+<p>There’s also <code class="docutils literal notranslate"><span class="pre">adata.uns['scautoqc_ranges']</span></code> which captures the inferred range print-out displayed as the function runs.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<p>The variable is a dictionary, with keys named after computed QC metrics present in the <code class="docutils literal notranslate"><span class="pre">.obs</span></code> of the input object. Values absent from <code class="docutils literal notranslate"><span class="pre">.obs</span></code> will get skipped (so in our case, <code class="docutils literal notranslate"><span class="pre">percent_soup</span></code>, <code class="docutils literal notranslate"><span class="pre">percent_spliced</span></code> and <code class="docutils literal notranslate"><span class="pre">scrublet_score</span></code> all got bypassed when we ran the function). The value is a five-element tuple controlling the input to the GMM and subsequent filtering behaviour:</p>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s1">&#39;scautoqc_ranges&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>low</th>
+      <th>high</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>n_counts</th>
+      <td>959.442158</td>
+      <td>15844.00293</td>
+    </tr>
+    <tr>
+      <th>n_genes</th>
+      <td>320.535843</td>
+      <td>3421.998779</td>
+    </tr>
+    <tr>
+      <th>percent_mito</th>
+      <td>0.0</td>
+      <td>5.943145</td>
+    </tr>
+    <tr>
+      <th>percent_ribo</th>
+      <td>13.568208</td>
+      <td>51.071623</td>
+    </tr>
+    <tr>
+      <th>percent_hb</th>
+      <td>0.0</td>
+      <td>0.002322</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Controlling the desired QC thresholds requires a bit of explanation.</p>
+<p>Under the hood, <code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> models each of the specified QC metrics as a Gaussian mixture model, with the model proposing possible low and high value cutoffs at points where the probability density function of the mixture falls below a threshold (0.05 by default). The function is written to allow robust filtering, requiring a specific formatting of <code class="docutils literal notranslate"><span class="pre">metrics</span></code>. The default values are stored in <code class="docutils literal notranslate"><span class="pre">sctk.default_metric_params_df</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">default_metric_params_df</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>min</th>
+      <th>max</th>
+      <th>scale</th>
+      <th>side</th>
+      <th>min_pass_rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>n_counts</th>
+      <td>1000.00</td>
+      <td>NaN</td>
+      <td>log</td>
+      <td>min_only</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <th>n_genes</th>
+      <td>100.00</td>
+      <td>NaN</td>
+      <td>log</td>
+      <td>min_only</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <th>percent_mito</th>
+      <td>0.01</td>
+      <td>20.0</td>
+      <td>log</td>
+      <td>max_only</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <th>percent_ribo</th>
+      <td>0.00</td>
+      <td>100.0</td>
+      <td>log</td>
+      <td>both</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <th>percent_hb</th>
+      <td>NaN</td>
+      <td>1.0</td>
+      <td>log</td>
+      <td>max_only</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <th>percent_soup</th>
+      <td>NaN</td>
+      <td>5.0</td>
+      <td>log</td>
+      <td>max_only</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <th>percent_spliced</th>
+      <td>50.00</td>
+      <td>97.5</td>
+      <td>log</td>
+      <td>both</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <th>scrublet_score</th>
+      <td>NaN</td>
+      <td>0.3</td>
+      <td>linear</td>
+      <td>max_only</td>
+      <td>0.95</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>The variable is a data frame, with rows named after computed QC metrics present in the <code class="docutils literal notranslate"><span class="pre">.obs</span></code> of the input object. Values absent from <code class="docutils literal notranslate"><span class="pre">.obs</span></code> will get skipped (so in our case, <code class="docutils literal notranslate"><span class="pre">percent_soup</span></code>, <code class="docutils literal notranslate"><span class="pre">percent_spliced</span></code> and <code class="docutils literal notranslate"><span class="pre">scrublet_score</span></code> all got bypassed when we ran the function). The five columns control the input to the GMM and subsequent filtering behaviour:</p>
 <ul class="simple">
-<li><p>the minimum value to use in modelling the distribution; values lower than this will be skipped; set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to use the encountered minimum</p></li>
-<li><p>the maximum value to use in modelling the distribution; values higher than this will be skipped; set to <code class="docutils literal notranslate"><span class="pre">None</span></code> to use the encountered maximum</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;log&quot;</span></code> to log-transform the QC metric values prior to modelling, <code class="docutils literal notranslate"><span class="pre">&quot;linear&quot;</span></code> to keep the values un-transformed</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">&quot;min_only&quot;</span></code> to only perform filtering of low values, <code class="docutils literal notranslate"><span class="pre">&quot;max_only&quot;</span></code> to only perform filtering of high values, <code class="docutils literal notranslate"><span class="pre">&quot;both&quot;</span></code> to perform filtering from both sides</p></li>
-<li><p>the minimum proportion of cells that need to pass the filtering on this feature; if the fraction is too low, the GMM is discarded and the QC values are thresholded based on the provided minimum/maximum</p></li>
+<li><p><strong>``min``</strong>: the minimum value to use in modelling the distribution; values lower than this will be skipped; set to <code class="docutils literal notranslate"><span class="pre">np.nan</span></code> to use the encountered minimum</p></li>
+<li><p><strong>``max``</strong>: the maximum value to use in modelling the distribution; values higher than this will be skipped; set to <code class="docutils literal notranslate"><span class="pre">np.nan</span></code> to use the encountered maximum</p></li>
+<li><p><strong>``scale``</strong>: <code class="docutils literal notranslate"><span class="pre">&quot;log&quot;</span></code> to log-transform the QC metric values prior to modelling, <code class="docutils literal notranslate"><span class="pre">&quot;linear&quot;</span></code> to keep the values un-transformed</p></li>
+<li><p><strong>``side``</strong>: <code class="docutils literal notranslate"><span class="pre">&quot;min_only&quot;</span></code> to only perform filtering of low values, <code class="docutils literal notranslate"><span class="pre">&quot;max_only&quot;</span></code> to only perform filtering of high values, <code class="docutils literal notranslate"><span class="pre">&quot;both&quot;</span></code> to perform filtering from both sides</p></li>
+<li><p><strong>``min_pass_rate``</strong>: the minimum proportion of cells that need to pass the filtering on this feature; if the fraction is too low, the GMM is discarded and the QC values are thresholded based on the provided minimum/maximum</p></li>
 </ul>
 <p>As the function goes along, it prints out the actual QC metric value ranges it used in filtering, and how many cells fall within that range. For example, notice how we specified a 100-gene minimum for the modelling, but the proposed data-driven cutoff ends up being 320.</p>
-<p>Let’s try out modifying the <code class="docutils literal notranslate"><span class="pre">metrics</span></code> values by removing the three measures absent from our object, and increasing the <code class="docutils literal notranslate"><span class="pre">n_genes</span></code> minimum to 500.</p>
+<p>Let’s try out modifying the <code class="docutils literal notranslate"><span class="pre">metrics</span></code> values by taking the default data farme, removing the three measures absent from our object, and increasing the <code class="docutils literal notranslate"><span class="pre">n_genes</span></code> minimum to 500.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;n_counts&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;min_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
-    <span class="s2">&quot;n_genes&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;min_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
-    <span class="s2">&quot;percent_mito&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;max_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
-    <span class="s2">&quot;percent_ribo&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
-    <span class="s2">&quot;percent_hb&quot;</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;max_only&quot;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
-<span class="p">}</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metrics</span> <span class="o">=</span> <span class="n">sctk</span><span class="o">.</span><span class="n">default_metric_params_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="s2">&quot;n_counts&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;n_genes&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;percent_mito&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;percent_ribo&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;percent_hb&quot;</span><span class="p">],</span> <span class="p">:]</span>
 
-<span class="n">sctk</span><span class="o">.</span><span class="n">cellwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+<span class="n">metrics</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;n_genes&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">metrics</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>min</th>
+      <th>max</th>
+      <th>scale</th>
+      <th>side</th>
+      <th>min_pass_rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>n_counts</th>
+      <td>1000.00</td>
+      <td>NaN</td>
+      <td>log</td>
+      <td>min_only</td>
+      <td>0.1</td>
+    </tr>
+    <tr>
+      <th>n_genes</th>
+      <td>500.00</td>
+      <td>NaN</td>
+      <td>log</td>
+      <td>min_only</td>
+      <td>0.1</td>
+    </tr>
+    <tr>
+      <th>percent_mito</th>
+      <td>0.01</td>
+      <td>20.0</td>
+      <td>log</td>
+      <td>max_only</td>
+      <td>0.1</td>
+    </tr>
+    <tr>
+      <th>percent_ribo</th>
+      <td>0.00</td>
+      <td>100.0</td>
+      <td>log</td>
+      <td>both</td>
+      <td>0.1</td>
+    </tr>
+    <tr>
+      <th>percent_hb</th>
+      <td>NaN</td>
+      <td>1.0</td>
+      <td>log</td>
+      <td>max_only</td>
+      <td>0.1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<p>Let’s re-run <code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> with these parameters.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">cellwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -600,10 +791,69 @@ percent_hb: [0.0, 0.002321736026317521], 2375/2700 passed
 </pre></div></div>
 </div>
 <p>The gene count filtering is different now, as expected.</p>
+<p>The third step of the QC workflow is to cluster the cells based on specified metrics, performing a quick Scanpy analysis using the metrics as features. This creates groups of cells that have similar QC profiles.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#present as columns in obs of the object</span>
+<span class="n">metrics_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;log1p_n_counts&quot;</span><span class="p">,</span> <span class="s2">&quot;log1p_n_genes&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_mito&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_ribo&quot;</span><span class="p">,</span> <span class="s2">&quot;percent_hb&quot;</span><span class="p">]</span>
+<span class="n">sctk</span><span class="o">.</span><span class="n">generate_qc_clusters</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics_list</span><span class="p">)</span>
+<span class="n">adata</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/jovyan/my-conda-envs/sctk/lib/python3.9/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+AnnData object with n_obs × n_vars = 2700 × 32738
+    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;cell_passed_qc&#39;, &#39;qc_cluster&#39;
+    var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
+    uns: &#39;scautoqc_ranges&#39;
+    obsm: &#39;X_umap_qc&#39;
+</pre></div></div>
+</div>
+<p>There’s now an <code class="docutils literal notranslate"><span class="pre">.obs</span></code> column called <code class="docutils literal notranslate"><span class="pre">qc_cluster</span></code>, and an embedding called <code class="docutils literal notranslate"><span class="pre">X_umap_qc</span></code>. Let’s take a look!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="s2">&quot;X_umap_qc&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;qc_cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;log1p_n_counts&quot;</span><span class="p">],</span> <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;OrRd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/jovyan/my-conda-envs/sctk/lib/python3.9/site-packages/scanpy/plotting/_tools/scatterplots.py:394: UserWarning: No data for colormapping provided via &#39;c&#39;. Parameters &#39;cmap&#39; will be ignored
+  cax = scatter(
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_automatic_qc_22_1.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_22_1.png" style="width: 667px; height: 299px;" />
+</div>
+</div>
 <p>The final step of the scAutoQC workflow determines computes a fraction of passing cells for each cluster. If a cluster has a high enough fraction of passing cells (controlled via the <code class="docutils literal notranslate"><span class="pre">threshold</span></code> parameter, default 0.5), it’s deemed to be a good QC cluster.</p>
 <p>You can use your own per-cell QC calls here rather than the ones provided by <code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code> if desired, just specify which <code class="docutils literal notranslate"><span class="pre">.obs</span></code> column to take via the <code class="docutils literal notranslate"><span class="pre">cell_qc_key</span></code> argument.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">clusterwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
@@ -612,21 +862,21 @@ percent_hb: [0.0, 0.002321736026317521], 2375/2700 passed
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 AnnData object with n_obs × n_vars = 2700 × 32738
-    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;qc_cluster&#39;, &#39;cell_passed_qc&#39;, &#39;cluster_passed_qc&#39;
+    obs: &#39;n_counts&#39;, &#39;log1p_n_counts&#39;, &#39;n_genes&#39;, &#39;log1p_n_genes&#39;, &#39;percent_mito&#39;, &#39;n_counts_mito&#39;, &#39;percent_ribo&#39;, &#39;n_counts_ribo&#39;, &#39;percent_hb&#39;, &#39;n_counts_hb&#39;, &#39;percent_top50&#39;, &#39;cell_passed_qc&#39;, &#39;qc_cluster&#39;, &#39;cluster_passed_qc&#39;
     var: &#39;gene_ids&#39;, &#39;mito&#39;, &#39;ribo&#39;, &#39;hb&#39;, &#39;n_counts&#39;, &#39;n_cells&#39;
-    uns: &#39;qc_cluster_colors&#39;
+    uns: &#39;scautoqc_ranges&#39;, &#39;qc_cluster_colors&#39;
     obsm: &#39;X_umap_qc&#39;
 </pre></div></div>
 </div>
 <p>There’s now a <code class="docutils literal notranslate"><span class="pre">cluster_passed_qc</span></code> column. Let’s take a look how it compares to the cell level QC.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#this won&#39;t be necessary in scanpy 1.10.0, booleans will become directly plottable</span>
@@ -640,32 +890,45 @@ AnnData object with n_obs × n_vars = 2700 × 32738
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_automatic_qc_20_0.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_20_0.png" style="width: 667px; height: 299px;" />
+<img alt="../_images/notebooks_automatic_qc_26_0.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_26_0.png" style="width: 667px; height: 299px;" />
 </div>
 </div>
-<p>We seem to get a nontrivial number of cells individually flagged as poor quality colocating in the top left of the plot, but only a small subset of them remain after cluster membership is leveraged. Let’s generate a new set of QC clusters by increasing the resolution parameter value, creating a higher number of smaller clusters as a result.</p>
+<p>We seem to get a nontrivial number of cells individually flagged as poor quality colocating in the top left of the plot, but only a small subset of them remain after cluster membership is leveraged. This can be overcome by changing the clustering resolution, but it’s a process that requires a degree of oversight. While not problematic when operating on a single sample in a demo notebook, this would be quite laborious and tedious when processing multiple samples ahead of an analysis.</p>
+<p>To combat this issue, scAutoQc comes with <code class="docutils literal notranslate"><span class="pre">sctk.multi_resolution_cluster_qc()</span></code>. The function tries out multiple different clustering resolutions (by default 0.1 to 1, going up in 0.1 intervals) and proposes two sets of QC calls, leveraging the information it collects along the way: - a single selected resolution where the Jaccard index between cell-level and cluster-level QC calls is the highest; by default cells/clusters failing QC are compared as they are likely to be the smaller set - the
+fraction of clusterings where the cell passes QC, subsequently thresholded</p>
+<p>In practice, you can run this function directly after <code class="docutils literal notranslate"><span class="pre">sctk.cellwise_qc()</span></code>, skipping <code class="docutils literal notranslate"><span class="pre">sctk.generate_qc_clusters()</span></code> and <code class="docutils literal notranslate"><span class="pre">sctk.clusterwise_qc()</span></code>. The two sets of QC calls are added in <code class="docutils literal notranslate"><span class="pre">cluster_passed_qc</span></code> and <code class="docutils literal notranslate"><span class="pre">consensus_passed_qc</span></code> respectively.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">generate_qc_clusters</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics_list</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">sctk</span><span class="o">.</span><span class="n">clusterwise_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sctk</span><span class="o">.</span><span class="n">multi_resolution_cluster_qc</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">metrics_list</span><span class="p">)</span>
 
 <span class="c1">#this won&#39;t be necessary in scanpy 1.10.0, booleans will become directly plottable</span>
-<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cell_passed_qc&#39;</span><span class="p">,</span> <span class="s1">&#39;cluster_passed_qc&#39;</span><span class="p">]:</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;cell_passed_qc&#39;</span><span class="p">,</span> <span class="s1">&#39;cluster_passed_qc&#39;</span><span class="p">,</span> <span class="s1">&#39;consensus_passed_qc&#39;</span><span class="p">]:</span>
     <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">col</span><span class="o">+</span><span class="s2">&quot;_int&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="s2">&quot;X_umap_qc&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cell_passed_qc_int&quot;</span><span class="p">,</span> <span class="s2">&quot;cluster_passed_qc_int&quot;</span><span class="p">])</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">embedding</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="s2">&quot;X_umap_qc&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cell_passed_qc_int&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;cluster_passed_qc_int&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;consensus_fraction&quot;</span><span class="p">,</span>
+                                           <span class="s2">&quot;consensus_passed_qc_int&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Best overlap found for resolution 0.8
+</pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_automatic_qc_22_0.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_22_0.png" style="width: 667px; height: 299px;" />
+<img alt="../_images/notebooks_automatic_qc_28_1.png" class="no-scaled-link" src="../_images/notebooks_automatic_qc_28_1.png" style="width: 1287px; height: 299px;" />
 </div>
 </div>
-<p>The plots align better now.</p>
+<p>The plots align better now. The two sets of multi-clustering QC calls seem to agree pretty well as well.</p>
 <p>At this point you should be able to use the QC workflow on your own data.</p>
 </section>
 
