@@ -394,9 +394,9 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", uns_qc_key="s
     Args:
         adata: AnnData object to filter cells from.
         metrics: Optional data frame specifying the parameters for each metric. 
-            If  not provided, the function uses a set of default metrics stored 
+            If not provided, the function uses a set of default metrics stored 
             in ``sctk.default_metric_params_df``. For defaults and an 
-            explanation, please refer to the QC workflow demo notebook.
+            explanation, please refer to the scAutoQC demo notebook.
         cell_qc_key: Obs column in the object to store the per-cell QC calls in.
         uns_qc_key: Uns key to store the determined QC ranges used in filtering.
         **kwargs: Additional keyword arguments to pass to the
