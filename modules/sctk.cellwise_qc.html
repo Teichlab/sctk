@@ -130,10 +130,10 @@ metric names and their corresponding parameters.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>adata</strong> – AnnData object to filter cells from.</p></li>
-<li><p><strong>metrics</strong> – Optional list/tuple of metric names or dictionary of metric
-names and their corresponding parameters. If not provided, the function
-uses a set of default metrics. For defaults and an explanation, please
-refer to the QC workflow demo notebook.</p></li>
+<li><p><strong>metrics</strong> – Optional data frame specifying the parameters for each metric.
+If  not provided, the function uses a set of default metrics stored
+in <code class="docutils literal notranslate"><span class="pre">sctk.default_metric_params_df</span></code>. For defaults and an
+explanation, please refer to the QC workflow demo notebook.</p></li>
 <li><p><strong>cell_qc_key</strong> – Obs column in the object to store the per-cell QC calls in.</p></li>
 <li><p><strong>uns_qc_key</strong> – Uns key to store the determined QC ranges used in filtering.</p></li>
 <li><p><strong>**kwargs</strong> – Additional keyword arguments to pass to the
