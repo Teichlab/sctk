@@ -139,11 +139,11 @@ def read_cellbender(
             vardict=vardict,
             n_var=n_var,
             n_obs=n_obs,
-            remove_zero=True,
-            remove_nan=True,
-            train_history=False,
-            latent_gene_encoding=False,
-            add_suffix=None,)
+            remove_zero=remove_zero,
+            remove_nan=remove_nan,
+            train_history=train_history,
+            latent_gene_encoding=latent_gene_encoding,
+            add_suffix=add_suffix,)
     else:
         ad = read_cellbender_v2(mat,
             feat=feat,
@@ -151,11 +151,11 @@ def read_cellbender(
             vardict=vardict,
             n_var=n_var,
             n_obs=n_obs,
-            remove_zero=True,
-            remove_nan=True,
-            train_history=False,
-            latent_gene_encoding=False,
-            add_suffix=None,)
+            remove_zero=remove_zero,
+            remove_nan=remove_nan,
+            train_history=train_history,
+            latent_gene_encoding=latent_gene_encoding,
+            add_suffix=add_suffix,)
     return ad
 
 def read_cellbender_v2(mat,
@@ -280,7 +280,7 @@ def read_cellbender_v3(f,
             "target_false_positive_rate": f['metadata']["target_false_positive_rate"][()],
             "test_elbo": list(f['metadata']['learning_curve_test_elbo']),
             "test_epoch": list(f['metadata']['learning_curve_test_epoch']),
-            "overall_change_in_train_elbo": list(f['metadata']["overall_change_in_train_elbo"]),
+            # "overall_change_in_train_elbo": list(f['metadata']["overall_change_in_train_elbo"]), this doesn't exist in default h5 v3
         }
         if train_history
         else {},
