@@ -249,7 +249,7 @@ def read_cellbender_v3(f,
     import scipy.sparse as sp
     import pandas as pd
     cols = ["cell_probability", "droplet_efficiency"]
-    if "barcode_indices_for_latents" in f["droplet_latents"]:
+    if f['droplet_latents']['barcode_indices_for_latents'].shape[0] < n_obs:
         bidx = f["droplet_latents"]["barcode_indices_for_latents"][()]
         obsdict = {}
         for x in cols:
@@ -263,7 +263,7 @@ def read_cellbender_v3(f,
             obsm.fill(np.nan)
             obsm[bidx, :] = lge
     else:
-        obsdict = {x: f["matrix"][x] for x in cols}
+        obsdict = {x: f["droplet_latents"][x] for x in cols}
         if latent_gene_encoding:
             obsm = f["droplet_latents"]["gene_expression_encoding"][()]
     barcodes = np.array(
