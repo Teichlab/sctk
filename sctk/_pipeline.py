@@ -301,6 +301,7 @@ def fit_gaussian(
     # pick best one based on BIC (the lower the better)
     # making this plot is useless if there's a single component count
     if plot and len(n_components) > 1:
+        fig, ax1 = plt.subplots()
         plt.plot(n_components, bics)
         plt.xlabel("GMM components")
         plt.ylabel("BIC")
@@ -364,6 +365,7 @@ def fit_gaussian(
             ax2.vlines(x=x_left, ymin=y0.min(), ymax=y0.max(), linewidth=1)
         if not np.isnan(x_right):
             ax2.vlines(x=x_right, ymin=y0.min(), ymax=y0.max(), linewidth=1)
+        plt.show()
     return x_left, x_right, gmm
 
 
