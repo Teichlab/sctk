@@ -29,6 +29,7 @@ from ._markers import (
     volcano_plot,
     calc_marker_stats,
     filter_marker_stats,
+    intersect_with_rank_genes_groups,
     top_markers,
     test_markers,
 )

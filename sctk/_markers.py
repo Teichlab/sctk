@@ -96,6 +96,7 @@ class volcano_plot:
             plt.show()
 
 
+#this is meant to be ran on log1p normalised data
 def calc_marker_stats(ad, groupby, genes=None, use_rep="raw", inplace=False, partial=False):
     if ad.obs[groupby].dtype.name != "category":
         raise ValueError('"%s" is not categorical' % groupby)
@@ -233,10 +234,29 @@ def filter_marker_stats(
             ["top_frac_group", "mean_diff", "frac_diff"], ascending=[True, False, False]
         )
     filtered["top_frac_group"] = filtered["top_frac_group"].astype("category")
-    filtered["top_frac_group"].cat.reorder_categories(
-        list(stats_df["top_frac_group"].cat.categories), inplace=True
+    filtered["top_frac_group"] = filtered["top_frac_group"].cat.reorder_categories(
+        list(stats_df["top_frac_group"].cat.categories)
     )
     return filtered
+
+
+def intersect_with_rank_genes_groups(mks, adata, pvals_adj_thresh=0.05):
+    #needs sc.tl.rank_genes_groups() ran on the adata
+    #retrieve full rank_genes_groups results space
+    rgg = sc.get.rank_genes_groups_df(adata, group=None)
+    #subset to overexpressed markers for cluster
+    #pvals_adj below threshold, and positive logfoldchanges
+    rgg = rgg.loc[rgg['pvals_adj'] < pvals_adj_thresh, :]
+    rgg = rgg.loc[rgg['logfoldchanges'] > 0, :]
+    #get a master list of markers called by both methods
+    #reported as GENE_CLUSTER
+    sctkm = [i+"_"+j for i,j in zip(mks.index, mks['top_frac_group'])]
+    rggm = [i+"_"+j for i,j in zip(rgg['names'], rgg['group'])]
+    #which of the sctk markers are in the rank_genes_groups markers?
+    mask = np.isin(sctkm, rggm)
+    #subset and return sctk marker list
+    mks = mks.loc[mask, :]
+    return mks
 
 
 def top_markers(df, top_n=5, groupby="top_frac_group"):
