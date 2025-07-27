@@ -507,6 +507,7 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", uns_qc_key="s
         print(
             "No cells passed. Performing simple filtering on counts, genes and mito%"
         )
+        # retrieve values from metrics
         adata.obs[cell_qc_key] = (
             (adata.obs.n_counts >= metrics.loc["n_counts", "min"])
             & (adata.obs.n_genes >= metrics.loc["n_genes", "min"])
