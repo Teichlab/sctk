@@ -509,9 +509,9 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", uns_qc_key="s
         )
         # retrieve values from metrics
         adata.obs[cell_qc_key] = (
-            (adata.obs.n_counts >= metrics.loc["n_counts", "min"])
-            & (adata.obs.n_genes >= metrics.loc["n_genes", "min"])
-            & (adata.obs.percent_mito < metrics.loc["percent_mito", "max"])
+            (adata.obs.n_counts >= metric_params["n_counts"][0])
+            & (adata.obs.n_genes >= metric_params["n_genes"][0])
+            & (adata.obs.percent_mito < metric_params["percent_mito"][1])
         )
 
 
