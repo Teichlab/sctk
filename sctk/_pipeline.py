@@ -286,6 +286,9 @@ def fit_gaussian(
     xmin = x.min() if xmin is None else xmin
     xmax = x.max() if xmax is None else xmax
     x_fit = x[(x >= xmin) & (x <= xmax)]
+    # ensure a consistent distance of 5 between the minimum and maximum
+    # pretty sure this is a precaution against extreme values
+    # which numerical methods are not fond of
     f = _scale_factor(x_fit)
     x_fit = (x_fit * f).reshape(-1, 1)
     # try a bunch of different component counts for the GMM
@@ -314,11 +317,13 @@ def fit_gaussian(
     y_pdf = np.zeros((n, nbins))
     y_cdf = np.zeros((n, nbins))
     for i in range(n):
+        # the .covariances_ are just the variance
+        # sqrt to get the std for the norm functions
         y_pdf[i] = (
             norm.pdf(
                 x0 * f,
                 loc=gmm.means_[i, 0],
-                scale=n * gmm.covariances_[i, 0, 0],
+                scale=np.sqrt(gmm.covariances_[i, 0, 0]),
             )
             * gmm.weights_[i]
         )
@@ -326,10 +331,15 @@ def fit_gaussian(
             norm.cdf(
                 x0 * f,
                 loc=gmm.means_[i, 0],
-                scale=n * gmm.covariances_[i, 0, 0],
+                scale=np.sqrt(gmm.covariances_[i, 0, 0]),
             )
             * gmm.weights_[i]
         )
+    # of note, this pdf is generated in the 5-range space
+    # so it's actually y0*(x0[1]-x0[0])*f that adds up to 1
+    # to have y0*(x0[1]-x0[0]) add up to 1, you'd need to get pdfs
+    # where x0 is as is, and loc/scale are divided by f
+    # that, or multiply the current pdfs by f
     y0 = y_pdf.sum(axis=0)
     x_peak = x0[np.argmax(y0)]
     try:
@@ -353,6 +363,7 @@ def fit_gaussian(
             xmax=x.max(),
             linewidth=1,
             linestyle="dotted",
+            color="red",
         )
         ax2.vlines(
             x=[xmin, xmax],
@@ -362,9 +373,9 @@ def fit_gaussian(
             linestyle="dashed",
         )
         if not np.isnan(x_left):
-            ax2.vlines(x=x_left, ymin=y0.min(), ymax=y0.max(), linewidth=1)
+            ax2.vlines(x=x_left, ymin=y0.min(), ymax=y0.max(), linewidth=1, color="red")
         if not np.isnan(x_right):
-            ax2.vlines(x=x_right, ymin=y0.min(), ymax=y0.max(), linewidth=1)
+            ax2.vlines(x=x_right, ymin=y0.min(), ymax=y0.max(), linewidth=1, color="red")
         plt.show()
     return x_left, x_right, gmm
 
@@ -453,7 +464,7 @@ def cellwise_qc(adata, metrics=None, cell_qc_key="cell_passed_qc", uns_qc_key="s
 
     n_obs = adata.n_obs
 
-    range_df = pd.DataFrame(columns=["low","high"])
+    range_df = pd.DataFrame(columns=["low","high"], dtype='float32')
     pass_filter = {}
     for m, v in metric_params.items():
         min_x, max_x, scale, side, min_pass_rate = v
