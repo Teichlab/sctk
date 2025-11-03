@@ -1,5 +1,5 @@
 sphinx-rtd-theme
-myst-nb
+nbsphinx
 myst-parser
 sphinx_design
 sphinxext-opengraph
