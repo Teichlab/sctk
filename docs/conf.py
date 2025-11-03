@@ -9,7 +9,7 @@
 project = "sctk"
 copyright = "2023, Teichmann lab"
 author = "nh3, Sebastian Lobentanzer, Krzysztof Polanski"
-release = "0.2.3"
+release = "0.2.4"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
