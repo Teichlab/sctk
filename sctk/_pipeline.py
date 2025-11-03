@@ -246,6 +246,7 @@ def fit_gaussian(
     plot=False,
     nbins=500,
     hist_bins=100,
+    cutoff="inner",
 ) -> tuple:
     """
     Fit a Gaussian mixture model to a 1D numpy array.
@@ -268,6 +269,8 @@ def fit_gaussian(
         plot: If True, plot the fitted Gaussian distribution.
         nbins: Number of bins to use for the distribution of `x`.
         hist_bins: Number of bins to use for the histogram of `x` in the plot.
+        cutoff: Whether to use the closest ("inner") or furthest ("outer") point 
+            relative to the GMM PDF maximum where the PDF falls below `threshold`.
 
     Returns:
         Tuple containing the lower bound, upper bound, and Gaussian mixture
@@ -343,12 +346,38 @@ def fit_gaussian(
     y0 = y_pdf.sum(axis=0)
     x_peak = x0[np.argmax(y0)]
     try:
-        x_left = x0[(y0 < threshold) & (x0 < x_peak)].max()
+        if cutoff == "inner":
+            #OG Ni - the closest point to the PDF maximum below threshold
+            x_left = x0[(y0 < threshold) & (x0 < x_peak)].max()
+        elif cutoff == "outer":
+            #let's find the furthest point above the threshold instead
+            #need to store the index so we can move it if needed
+            x_left_ind = np.arange(len(x0))[(y0 >= threshold) & (x0 < x_peak)].min()
+            #shove it down by 1 to go sub threshold
+            #unless we're at 0 already
+            if x_left_ind > 0:
+                x_left_ind = x_left_ind - 1
+            x_left = x0[x_left_ind]
+        else:
+            raise ValueError('cutoff needs to be "inner" or "outer"')
     except Exception:
         sc_warn("Failed to find lower bound, using min value instead.")
         x_left = x0.min()
     try:
-        x_right = x0[(y0 < threshold) & (x0 > x_peak)].min()
+        if cutoff == "inner":
+            #OG Ni - the closest point to the PDF maximum
+            x_right = x0[(y0 < threshold) & (x0 > x_peak)].min()
+        elif cutoff == "outer":
+            #let's find the furthest point above the threshold instead
+            #need to store the index so we can move it if needed
+            x_right_ind = np.arange(len(x0))[(y0 >= threshold) & (x0 > x_peak)].max()
+            #shove it up by 1 to go sub threshold
+            #unless we're at the the highest value already
+            if x_right_ind < (len(x0)-1):
+                x_right_ind = x_right_ind + 1
+            x_right = x0[x_right_ind]
+        else:
+            raise ValueError('cutoff needs to be "inner" or "outer"')
     except Exception:
         sc_warn("Failed to find upper bound, using max value instead.")
         x_right = x0.max()
