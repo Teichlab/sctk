@@ -29,7 +29,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",  # not for output but to remove warnings
-    "sphinxext.opengraph",
+    "sphinx.ext.opengraph",
     "sphinx.ext.autosummary",
     "myst_nb",
     "myst_parser",  # markdown support
