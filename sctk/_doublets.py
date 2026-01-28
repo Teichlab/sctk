@@ -99,7 +99,7 @@ def run_scrublet(
         df["scrublet_score_z"] = ds_z
         df["scrublet_done"] = True
 
-    except ValueError:
+    except (ValueError, ZeroDivisionError):
         if ignore_error:
             n = adata.n_obs
             ones = np.ones(n)
